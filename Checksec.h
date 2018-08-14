@@ -4,13 +4,13 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "vendor/json.hpp"
+#include "json.hpp"
 using json = nlohmann::json;
 
 
 using namespace std;
 
-namespace sl2 {
+namespace checksec {
 
 class Checksec  {
 public:

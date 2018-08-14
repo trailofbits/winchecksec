@@ -5,10 +5,10 @@
 
 using namespace std;
 
-#include "vendor/json.hpp"
+#include "json.hpp"
 using json = nlohmann::json;
 
-namespace sl2 {
+namespace checksec {
 
 void Checksec::process() {
 
@@ -23,7 +23,6 @@ void Checksec::process() {
     filestream_.read( (char*)&imageDosHeader,       sizeof(imageDosHeader) );
     if( imageDosHeader.e_magic != IMAGE_DOS_SIGNATURE ) {
         string msg = "Not a valid DOS header.";
-        cerr << msg << endl;
         throw msg;
     }
 
@@ -33,7 +32,6 @@ void Checksec::process() {
     filestream_.read( (char*)&ntSignature,          sizeof(ntSignature) );
     if( ntSignature!= IMAGE_NT_SIGNATURE ) {
         string msg = "Not a valid NT Signature.";
-        cerr << msg << endl;
         throw msg;
     }
     filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
@@ -55,16 +53,18 @@ Checksec::operator json() const {
         { "isolation",      isIsolation() },
         { "nx",             isNX() },
         { "seh",            isSEH() },
-        { "crashReason",    filepath_ },
+        { "path",           filepath_ },
     };
 }
 
 const bool Checksec::isDynamicBase()      const  {
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
 }
+
 const bool Checksec::isForceIntegrity()   const {
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY;
 }
+
 const bool Checksec::isNX()               const {
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT;
 }
@@ -79,12 +79,12 @@ const bool Checksec::isSEH()              const {
 
 
 ostream& operator<<( ostream& os, Checksec& self ) {
-    //json j = self.operator json();
-    os << "Dyanmic Base  -: " <<  self.isDynamicBase() << endl;
-    os << "Force Integrity: " << self.isForceIntegrity() << endl;
-    os << "Isolation      : " << self.isIsolation() << endl;
-    os << "NX             : " << self.isNX() << endl;
-    os << "SEH            : " << self.isSEH() << endl;
+    json j = self.operator json();
+    os << "Dyanmic Base   : " << j["dynamicBase"] << endl;
+    os << "Force Integrity: " << j["forceIntegrity"] << endl;
+    os << "Isolation      : " << j["isolation"] << endl;
+    os << "NX             : " << j["nx"] << endl;
+    os << "SEH            : " << j["seh"] << endl;
     return os;
 }
 
