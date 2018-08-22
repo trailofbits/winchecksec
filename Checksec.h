@@ -33,6 +33,7 @@ public:
     json toJson() const;
 
     const bool isDynamicBase()      const;
+    const bool isASLR()             const;
     const bool isForceIntegrity()   const;
     const bool isNX()               const;
     const bool isIsolation()        const;
@@ -47,6 +48,7 @@ private:
     void                process();
     string              filepath_;
     ifstream            filestream_;
+    uint16_t            imageCharacteristics_ = 0;
     uint16_t            dllCharacteristics_ = 0;
 };
 
