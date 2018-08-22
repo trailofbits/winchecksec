@@ -53,6 +53,7 @@ Checksec::operator json() const {
         { "isolation",      isIsolation() },
         { "nx",             isNX() },
         { "seh",            isSEH() },
+        { "cfg",            isCFG() },
         { "path",           filepath_ },
     };
 }
@@ -77,6 +78,10 @@ const bool Checksec::isSEH()              const {
     return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_SEH);
 }
 
+const bool Checksec::isCFG()              const {
+    return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF;
+}
+
 
 ostream& operator<<( ostream& os, Checksec& self ) {
     json j = self.operator json();
@@ -85,6 +90,7 @@ ostream& operator<<( ostream& os, Checksec& self ) {
     os << "Isolation      : " << j["isolation"] << endl;
     os << "NX             : " << j["nx"] << endl;
     os << "SEH            : " << j["seh"] << endl;
+    os << "CFG            : " << j["cfg"] << endl;
     return os;
 }
 
