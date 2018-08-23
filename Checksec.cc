@@ -37,6 +37,7 @@ void Checksec::process() {
     filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
     filestream_.read( (char*)&imageOptionalHeader,  sizeof(imageOptionalHeader) );
 
+    imageCharacteristics_ = imageFileHeader.Characteristics;
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
 
 }
@@ -49,6 +50,7 @@ json Checksec::toJson()     const  {
 Checksec::operator json() const {
     return json {
         { "dynamicBase",    isDynamicBase() },
+        { "aslr",           isASLR() },
         { "forceIntegrity", isForceIntegrity() },
         { "isolation",      isIsolation() },
         { "nx",             isNX() },
@@ -60,6 +62,10 @@ Checksec::operator json() const {
 
 const bool Checksec::isDynamicBase()      const  {
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
+}
+
+const bool Checksec::isASLR()             const {
+    return !(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) && isDynamicBase();
 }
 
 const bool Checksec::isForceIntegrity()   const {
@@ -86,6 +92,7 @@ const bool Checksec::isCFG()              const {
 ostream& operator<<( ostream& os, Checksec& self ) {
     json j = self.operator json();
     os << "Dyanmic Base   : " << j["dynamicBase"] << endl;
+    os << "ASLR           : " << j["aslr"] << endl;
     os << "Force Integrity: " << j["forceIntegrity"] << endl;
     os << "Isolation      : " << j["isolation"] << endl;
     os << "NX             : " << j["nx"] << endl;
