@@ -37,6 +37,7 @@ public:
     const bool isNX()               const;
     const bool isIsolation()        const;
     const bool isSEH()              const;
+    const bool isCFG()              const;
 
     operator json() const;
     friend ostream& operator<<( ostream& os, Checksec& );
