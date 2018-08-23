@@ -51,6 +51,7 @@ Checksec::operator json() const {
     return json {
         { "dynamicBase",    isDynamicBase() },
         { "aslr",           isASLR() },
+        { "highEntropyVA",  isHighEntropyVA() },
         { "forceIntegrity", isForceIntegrity() },
         { "isolation",      isIsolation() },
         { "nx",             isNX() },
@@ -66,6 +67,12 @@ const bool Checksec::isDynamicBase()      const  {
 
 const bool Checksec::isASLR()             const {
     return !(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) && isDynamicBase();
+}
+
+const bool Checksec::isHighEntropyVA()    const {
+    // NOTE(ww): Set by /HIGHENTROPYVA, but not exposed anywhere as a constant.
+    // Only relevant on 64-bit machines with 64-bit images.
+    return dllCharacteristics_ & 0x20;
 }
 
 const bool Checksec::isForceIntegrity()   const {
@@ -91,13 +98,14 @@ const bool Checksec::isCFG()              const {
 
 ostream& operator<<( ostream& os, Checksec& self ) {
     json j = self.operator json();
-    os << "Dyanmic Base   : " << j["dynamicBase"] << endl;
-    os << "ASLR           : " << j["aslr"] << endl;
-    os << "Force Integrity: " << j["forceIntegrity"] << endl;
-    os << "Isolation      : " << j["isolation"] << endl;
-    os << "NX             : " << j["nx"] << endl;
-    os << "SEH            : " << j["seh"] << endl;
-    os << "CFG            : " << j["cfg"] << endl;
+    os << "Dyanmic Base    : " << j["dynamicBase"] << endl;
+    os << "ASLR            : " << j["aslr"] << endl;
+    os << "High Entropy VA : " << j["highEntropyVA"] << endl;
+    os << "Force Integrity : " << j["forceIntegrity"] << endl;
+    os << "Isolation       : " << j["isolation"] << endl;
+    os << "NX              : " << j["nx"] << endl;
+    os << "SEH             : " << j["seh"] << endl;
+    os << "CFG             : " << j["cfg"] << endl;
     return os;
 }
 

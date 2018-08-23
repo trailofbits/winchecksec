@@ -34,6 +34,7 @@ public:
 
     const bool isDynamicBase()      const;
     const bool isASLR()             const;
+    const bool isHighEntropyVA()    const;
     const bool isForceIntegrity()   const;
     const bool isNX()               const;
     const bool isIsolation()        const;
