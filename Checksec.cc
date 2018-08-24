@@ -106,10 +106,10 @@ const bool Checksec::isAuthenticode()     const {
     std::wstring filePathW = converter.from_bytes(filepath_);
 
     WINTRUST_FILE_INFO fileInfo = {
-        sizeof(fileInfo),
-        filePathW.c_str(),
-        NULL,
-        NULL,
+        sizeof(fileInfo),    /* cbStruct */
+        filePathW.c_str(),   /* pcwszFilePath */
+        NULL,                /* hFile */
+        NULL,                /* pgKnownSubject */
     };
 
     GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
