@@ -1,7 +1,12 @@
-#include "Checksec.h"
 #include <windows.h>
 #include <winnt.h>
+#include <wincrypt.h>
+#include <softpub.h>
+
 #include <ostream>
+#include <codecvt>
+
+#include "Checksec.h"
 
 using namespace std;
 
@@ -57,6 +62,7 @@ Checksec::operator json() const {
         { "nx",             isNX() },
         { "seh",            isSEH() },
         { "cfg",            isCFG() },
+        { "authenticode",   isAuthenticode() },
         { "path",           filepath_ },
     };
 }
@@ -95,6 +101,64 @@ const bool Checksec::isCFG()              const {
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF;
 }
 
+const bool Checksec::isAuthenticode()     const {
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+    std::wstring filePathW = converter.from_bytes(filepath_);
+
+    WINTRUST_FILE_INFO fileInfo = {
+        sizeof(fileInfo),
+        filePathW.c_str(),
+        NULL,
+        NULL,
+    };
+
+    GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+    WINTRUST_DATA trustData = {
+        sizeof(trustData),        /* cbStruct */
+        NULL,                     /* pPolicyCallbackData */
+        NULL,                     /* pSIPClientData */
+        WTD_UI_NONE,              /* dwUIChoice */
+        WTD_REVOKE_NONE,          /* fdwRevocationChecks */
+        WTD_CHOICE_FILE,          /* dwUnionChoice */
+        &fileInfo,                /* pFile */
+        WTD_STATEACTION_VERIFY,   /* dwStateAction */
+        NULL,                     /* hWVTStateData */
+        NULL,                     /* pwszURLReference */
+        0,                        /* dwProvFlags */
+        0,                        /* dwUIContext */
+        NULL,                     /* pSignatureSettings */
+    };
+
+    uint32_t status = WinVerifyTrust(NULL, &policyGUID, &trustData);
+
+    // if (status == TRUST_E_SUBJECT_NOT_TRUSTED) {
+    //     std::cout << "NOT TRUSTED" << std::endl;
+    // }
+    // else if (status == TRUST_E_PROVIDER_UNKNOWN) {
+    //     std::cout << "PROVIDER UNKNOWN" << std::endl;
+    // }
+    // else if (status == TRUST_E_ACTION_UNKNOWN) {
+    //     std::cout << "ACTION UNKNOWN" << std::endl;
+    // }
+    // else if (status == TRUST_E_SUBJECT_FORM_UNKNOWN) {
+    //     std::cout << "SUBJECT FORM UNKNOWN" << std::endl;
+    // }
+    // else if (status == TRUST_E_NO_SIGNATURE) {
+    //     std::cout << "NO SIGNATURE" << std::endl;
+    // }
+    // else if (status == TRUST_E_)
+    // else if (status != ERROR_SUCCESS) {
+    //     std::cout << "GLE=" << GetLastError() << std::endl;
+    // }
+
+    trustData.dwStateAction = WTD_STATEACTION_CLOSE;
+
+    WinVerifyTrust(NULL, &policyGUID, &trustData);
+
+    return status == ERROR_SUCCESS;
+}
+
 
 ostream& operator<<( ostream& os, Checksec& self ) {
     json j = self.operator json();
@@ -106,6 +170,7 @@ ostream& operator<<( ostream& os, Checksec& self ) {
     os << "NX              : " << j["nx"] << endl;
     os << "SEH             : " << j["seh"] << endl;
     os << "CFG             : " << j["cfg"] << endl;
+    os << "Authenticode    : " << j["authenticode"] << endl;
     return os;
 }
 

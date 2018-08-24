@@ -40,6 +40,7 @@ public:
     const bool isIsolation()        const;
     const bool isSEH()              const;
     const bool isCFG()              const;
+    const bool isAuthenticode()     const;
 
     operator json() const;
     friend ostream& operator<<( ostream& os, Checksec& );
