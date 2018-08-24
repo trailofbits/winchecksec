@@ -132,26 +132,6 @@ const bool Checksec::isAuthenticode()     const {
 
     uint32_t status = WinVerifyTrust(NULL, &policyGUID, &trustData);
 
-    // if (status == TRUST_E_SUBJECT_NOT_TRUSTED) {
-    //     std::cout << "NOT TRUSTED" << std::endl;
-    // }
-    // else if (status == TRUST_E_PROVIDER_UNKNOWN) {
-    //     std::cout << "PROVIDER UNKNOWN" << std::endl;
-    // }
-    // else if (status == TRUST_E_ACTION_UNKNOWN) {
-    //     std::cout << "ACTION UNKNOWN" << std::endl;
-    // }
-    // else if (status == TRUST_E_SUBJECT_FORM_UNKNOWN) {
-    //     std::cout << "SUBJECT FORM UNKNOWN" << std::endl;
-    // }
-    // else if (status == TRUST_E_NO_SIGNATURE) {
-    //     std::cout << "NO SIGNATURE" << std::endl;
-    // }
-    // else if (status == TRUST_E_)
-    // else if (status != ERROR_SUCCESS) {
-    //     std::cout << "GLE=" << GetLastError() << std::endl;
-    // }
-
     trustData.dwStateAction = WTD_STATEACTION_CLOSE;
 
     WinVerifyTrust(NULL, &policyGUID, &trustData);
