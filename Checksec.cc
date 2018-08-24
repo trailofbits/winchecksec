@@ -40,6 +40,9 @@ void Checksec::process() {
         throw msg;
     }
     filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
+
+    // TODO(ww): We should probably guard this with imageFileHeader.SizeOfOptionalHeader != 0,
+    // since object files lack an optional header.
     filestream_.read( (char*)&imageOptionalHeader,  sizeof(imageOptionalHeader) );
 
     imageCharacteristics_ = imageFileHeader.Characteristics;
