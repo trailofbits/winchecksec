@@ -77,10 +77,11 @@ void Checksec::process() {
                               - sectionHeader.VirtualAddress
                               + sectionHeader.PointerToRawData;
 
+    size_t loadConfigSize = (dir.Size < sizeof(loadConfig_)) ? dir.Size : sizeof(loadConfig_);
+
     // After all that, we can finally read the load config directory.
     filestream_.seekg(loadConfigOffset, ios_base::beg);
-    // TODO(ww): We should probably sanity-check dir.Size against sizeof(loadConfig)
-    filestream_.read((char *) &loadConfig_, dir.Size);
+    filestream_.read((char *) &loadConfig_, loadConfigSize);
 
     ImageUnload(loadedImage);
 
