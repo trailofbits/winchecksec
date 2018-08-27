@@ -39,10 +39,6 @@ void Checksec::process() {
     }
     filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
 
-    if ( imageFileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ) {
-        throw "Unsupported machine type; AMD64 only for now.";
-    }
-
     if ( !imageFileHeader.SizeOfOptionalHeader ) {
         throw "Missing optional header.";
     }
@@ -201,7 +197,7 @@ const bool Checksec::isSafeSEH() const {
         return false;
     }
 
-    return loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
+    return isSEH() && loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
 }
 
 const bool Checksec::isGS() const {
@@ -218,7 +214,7 @@ const bool Checksec::isGS() const {
 
 ostream& operator<<( ostream& os, Checksec& self ) {
     json j = self.operator json();
-    os << "Dyanmic Base    : " << j["dynamicBase"] << endl;
+    os << "Dynamic Base    : " << j["dynamicBase"] << endl;
     os << "ASLR            : " << j["aslr"] << endl;
     os << "High Entropy VA : " << j["highEntropyVA"] << endl;
     os << "Force Integrity : " << j["forceIntegrity"] << endl;
