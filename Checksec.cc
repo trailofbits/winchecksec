@@ -2,6 +2,7 @@
 #include <winnt.h>
 #include <wincrypt.h>
 #include <softpub.h>
+#include <imagehlp.h>
 
 #include <ostream>
 #include <codecvt>
@@ -41,12 +42,48 @@ void Checksec::process() {
     }
     filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
 
-    // TODO(ww): We should probably guard this with imageFileHeader.SizeOfOptionalHeader != 0,
-    // since object files lack an optional header.
+    if ( !imageFileHeader.SizeOfOptionalHeader ) {
+        string msg = "Missing optional header.";
+        throw msg;
+    }
+
     filestream_.read( (char*)&imageOptionalHeader,  sizeof(imageOptionalHeader) );
 
     imageCharacteristics_ = imageFileHeader.Characteristics;
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
+
+    // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
+    IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[10];
+
+    if ( !dir.VirtualAddress || !dir.Size ) {
+        string msg = "No IMAGE_LOAD_CONFIG_DIRECTORY in the PE.";
+        throw msg;
+    }
+
+    LOADED_IMAGE *loadedImage = ImageLoad(filepath_.c_str(), NULL);
+
+    IMAGE_SECTION_HEADER sectionHeader = {0};
+
+    // Find the section that contains the load config directory.
+    // This should always be .rdata, but there's no telling with Windows.
+    for (uint64_t i = 0; i < loadedImage->NumberOfSections; i++) {
+        if (loadedImage->Sections[i].VirtualAddress < dir.VirtualAddress
+            && loadedImage->Sections[i].VirtualAddress > sectionHeader.VirtualAddress)
+        {
+            sectionHeader = loadedImage->Sections[i];
+        }
+    }
+
+    size_t loadConfigOffset = dir.VirtualAddress
+                              - sectionHeader.VirtualAddress
+                              + sectionHeader.PointerToRawData;
+
+    // After all that, we can finally read the load config directory.
+    filestream_.seekg(loadConfigOffset, ios_base::beg);
+    // TODO(ww): We should probably sanity-check dir.Size against sizeof(loadConfig)
+    filestream_.read((char *) &loadConfig_, dir.Size);
+
+    ImageUnload(loadedImage);
 
 }
 
@@ -65,6 +102,9 @@ Checksec::operator json() const {
         { "nx",             isNX() },
         { "seh",            isSEH() },
         { "cfg",            isCFG() },
+        { "rfg",            isRFG() },
+        { "safe_seh",       isSafeSEH() },
+        { "gs",             isGS() },
         { "authenticode",   isAuthenticode() },
         { "path",           filepath_ },
     };
@@ -142,6 +182,21 @@ const bool Checksec::isAuthenticode()     const {
     return status == ERROR_SUCCESS;
 }
 
+const bool Checksec::isRFG() const {
+    // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
+    return (loadConfig_.GuardFlags & 0x00020000)
+        && (loadConfig_.GuardFlags & 0x00040000 || loadConfig_.GuardFlags & 0x00080000);
+}
+
+const bool Checksec::isSafeSEH() const {
+    return loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
+}
+
+const bool Checksec::isGS() const {
+    // TODO(ww): Handle the edge case where the user defines a custom entry point
+    // and fails to call __security_init_cookie().
+    return loadConfig_.SecurityCookie != 0;
+}
 
 ostream& operator<<( ostream& os, Checksec& self ) {
     json j = self.operator json();
@@ -153,6 +208,9 @@ ostream& operator<<( ostream& os, Checksec& self ) {
     os << "NX              : " << j["nx"] << endl;
     os << "SEH             : " << j["seh"] << endl;
     os << "CFG             : " << j["cfg"] << endl;
+    os << "RFG             : " << j["rfg"] << endl;
+    os << "SafeSEH         : " << j["safe_seh"] << endl;
+    os << "GS              : " << j["gs"] << endl;
     os << "Authenticode    : " << j["authenticode"] << endl;
     return os;
 }
