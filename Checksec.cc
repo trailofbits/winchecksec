@@ -99,7 +99,7 @@ Checksec::operator json() const {
         { "seh",            isSEH() },
         { "cfg",            isCFG() },
         { "rfg",            isRFG() },
-        { "safe_seh",       isSafeSEH() },
+        { "safeSEH",        isSafeSEH() },
         { "gs",             isGS() },
         { "authenticode",   isAuthenticode() },
         { "path",           filepath_ },
@@ -223,7 +223,7 @@ ostream& operator<<( ostream& os, Checksec& self ) {
     os << "SEH             : " << j["seh"] << endl;
     os << "CFG             : " << j["cfg"] << endl;
     os << "RFG             : " << j["rfg"] << endl;
-    os << "SafeSEH         : " << j["safe_seh"] << endl;
+    os << "SafeSEH         : " << j["safeSEH"] << endl;
     os << "GS              : " << j["gs"] << endl;
     os << "Authenticode    : " << j["authenticode"] << endl;
     return os;
