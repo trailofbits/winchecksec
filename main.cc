@@ -42,7 +42,7 @@ int main( int argc, char* argv[] ) {
             cout << csec << endl;
         }
 
-    } catch( string& x1 ) {
+    } catch( const char *x1 ) {
         cerr << x1 << endl;
         usage(argv);
         return -__LINE__;

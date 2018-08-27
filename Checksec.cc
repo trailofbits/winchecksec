@@ -25,11 +25,9 @@ void Checksec::process() {
     uint32_t                ntSignature;
 
 
-
     filestream_.read( (char*)&imageDosHeader,       sizeof(imageDosHeader) );
     if( imageDosHeader.e_magic != IMAGE_DOS_SIGNATURE ) {
-        string msg = "Not a valid DOS header.";
-        throw msg;
+        throw "Not a valid DOS header.";
     }
 
     filestream_.read( (char*)&imageDosHeaderExtra,  sizeof(imageDosHeaderExtra) );
@@ -37,14 +35,16 @@ void Checksec::process() {
     filestream_.seekg( imageDosHeader.e_lfanew, ios_base::beg );
     filestream_.read( (char*)&ntSignature,          sizeof(ntSignature) );
     if( ntSignature!= IMAGE_NT_SIGNATURE ) {
-        string msg = "Not a valid NT Signature.";
-        throw msg;
+        throw "Not a valid NT Signature.";
     }
     filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
 
+    if ( imageFileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ) {
+        throw "Unsupported machine type; AMD64 only for now.";
+    }
+
     if ( !imageFileHeader.SizeOfOptionalHeader ) {
-        string msg = "Missing optional header.";
-        throw msg;
+        throw "Missing optional header.";
     }
 
     filestream_.read( (char*)&imageOptionalHeader,  sizeof(imageOptionalHeader) );
@@ -56,8 +56,7 @@ void Checksec::process() {
     IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[10];
 
     if ( !dir.VirtualAddress || !dir.Size ) {
-        string msg = "No IMAGE_LOAD_CONFIG_DIRECTORY in the PE.";
-        throw msg;
+        throw "No IMAGE_LOAD_CONFIG_DIRECTORY in the PE.";
     }
 
     LOADED_IMAGE *loadedImage = ImageLoad(filepath_.c_str(), NULL);
@@ -183,16 +182,34 @@ const bool Checksec::isAuthenticode()     const {
 }
 
 const bool Checksec::isRFG() const {
+    // NOTE(ww): a load config under 148 bytes implies the absence of the GuardFlags field.
+    if (loadConfig_.Size < 148) {
+        cerr << "Warn: short load config, assuming no RFG" << endl;
+        return false;
+    }
+
     // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
     return (loadConfig_.GuardFlags & 0x00020000)
         && (loadConfig_.GuardFlags & 0x00040000 || loadConfig_.GuardFlags & 0x00080000);
 }
 
 const bool Checksec::isSafeSEH() const {
+    // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH fields.
+    if (loadConfig_.Size < 112) {
+        cerr << "Warn: short load config, assuming no SafeSEH" << endl;
+        return false;
+    }
+
     return loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
 }
 
 const bool Checksec::isGS() const {
+    // NOTE(ww): a load config under 96 bytes implies the absence of the SecurityCookie field.
+    if (loadConfig_.Size < 96) {
+        cerr << "Warn: short load config, assuming no GS" << endl;
+        return false;
+    }
+
     // TODO(ww): Handle the edge case where the user defines a custom entry point
     // and fails to call __security_init_cookie().
     return loadConfig_.SecurityCookie != 0;
