@@ -48,6 +48,13 @@ void Checksec::process() {
     imageCharacteristics_ = imageFileHeader.Characteristics;
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
 
+    // Warn and return early if the image data directory vector
+    // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
+    if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
+        cerr << "Warn: short image data directory vector" << endl;
+        return;
+    }
+
     // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
     IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
 
