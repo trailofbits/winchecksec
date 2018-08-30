@@ -49,7 +49,7 @@ void Checksec::process() {
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
 
     // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
-    IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[10];
+    IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
 
     if ( !dir.VirtualAddress || !dir.Size ) {
         cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
