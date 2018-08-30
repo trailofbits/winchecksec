@@ -52,7 +52,8 @@ void Checksec::process() {
     IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[10];
 
     if ( !dir.VirtualAddress || !dir.Size ) {
-        throw "No IMAGE_LOAD_CONFIG_DIRECTORY in the PE.";
+        cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
+        return;
     }
 
     LOADED_IMAGE *loadedImage = ImageLoad(filepath_.c_str(), NULL);
@@ -181,7 +182,7 @@ const bool Checksec::isAuthenticode()     const {
 const bool Checksec::isRFG() const {
     // NOTE(ww): a load config under 148 bytes implies the absence of the GuardFlags field.
     if (loadConfig_.Size < 148) {
-        cerr << "Warn: short load config, assuming no RFG" << endl;
+        cerr << "Warn: no or short load config, assuming no RFG" << endl;
         return false;
     }
 
@@ -193,7 +194,7 @@ const bool Checksec::isRFG() const {
 const bool Checksec::isSafeSEH() const {
     // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH fields.
     if (loadConfig_.Size < 112) {
-        cerr << "Warn: short load config, assuming no SafeSEH" << endl;
+        cerr << "Warn: no or short load config, assuming no SafeSEH" << endl;
         return false;
     }
 
@@ -203,7 +204,7 @@ const bool Checksec::isSafeSEH() const {
 const bool Checksec::isGS() const {
     // NOTE(ww): a load config under 96 bytes implies the absence of the SecurityCookie field.
     if (loadConfig_.Size < 96) {
-        cerr << "Warn: short load config, assuming no GS" << endl;
+        cerr << "Warn: no or short load config, assuming no GS" << endl;
         return false;
     }
 
