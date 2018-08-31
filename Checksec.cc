@@ -18,32 +18,14 @@ namespace checksec {
 
 void Checksec::process() {
 
-    IMAGE_DOS_HEADER        imageDosHeader;
-    IMAGE_FILE_HEADER       imageFileHeader;
-    IMAGE_OPTIONAL_HEADER   imageOptionalHeader;
-    uint32_t                imageDosHeaderExtra[16];
-    uint32_t                ntSignature;
+    LOADED_IMAGE *loadedImage = ImageLoad(filepath_.c_str(), NULL);
 
-
-    filestream_.read( (char*)&imageDosHeader,       sizeof(imageDosHeader) );
-    if( imageDosHeader.e_magic != IMAGE_DOS_SIGNATURE ) {
-        throw "Not a valid DOS header.";
+    if (!loadedImage) {
+        throw "Couldn't load file; corrupt or not a PE?";
     }
 
-    filestream_.read( (char*)&imageDosHeaderExtra,  sizeof(imageDosHeaderExtra) );
-
-    filestream_.seekg( imageDosHeader.e_lfanew, ios_base::beg );
-    filestream_.read( (char*)&ntSignature,          sizeof(ntSignature) );
-    if( ntSignature!= IMAGE_NT_SIGNATURE ) {
-        throw "Not a valid NT Signature.";
-    }
-    filestream_.read( (char*)&imageFileHeader,      sizeof(imageFileHeader) );
-
-    if ( !imageFileHeader.SizeOfOptionalHeader ) {
-        throw "Missing optional header.";
-    }
-
-    filestream_.read( (char*)&imageOptionalHeader,  sizeof(imageOptionalHeader) );
+    IMAGE_FILE_HEADER imageFileHeader = loadedImage->FileHeader->FileHeader;
+    IMAGE_OPTIONAL_HEADER imageOptionalHeader = loadedImage->FileHeader->OptionalHeader;
 
     imageCharacteristics_ = imageFileHeader.Characteristics;
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
@@ -52,6 +34,7 @@ void Checksec::process() {
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
         cerr << "Warn: short image data directory vector" << endl;
+        ImageUnload(loadedImage);
         return;
     }
 
@@ -60,10 +43,16 @@ void Checksec::process() {
 
     if ( !dir.VirtualAddress || !dir.Size ) {
         cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
+        ImageUnload(loadedImage);
         return;
     }
 
-    LOADED_IMAGE *loadedImage = ImageLoad(filepath_.c_str(), NULL);
+    // NOTE(ww): This always returns false, even when there definitely is an
+    // IMAGE_LOAD_CONFIG_DIRECTORY in the image. I'm guessing that MS just broke
+    // this API and decided not to tell anybody.
+    // if (!GetImageConfigInformation(loadedImage, &loadConfig_)) {
+    //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY" << endl;
+    // }
 
     IMAGE_SECTION_HEADER sectionHeader = {0};
 
@@ -82,6 +71,8 @@ void Checksec::process() {
                               + sectionHeader.PointerToRawData;
 
     size_t loadConfigSize = (dir.Size < sizeof(loadConfig_)) ? dir.Size : sizeof(loadConfig_);
+
+
 
     // After all that, we can finally read the load config directory.
     filestream_.seekg(loadConfigOffset, ios_base::beg);
