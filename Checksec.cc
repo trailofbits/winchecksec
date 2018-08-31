@@ -48,8 +48,10 @@ void Checksec::process() {
     }
 
     // NOTE(ww): This always returns false, even when there definitely is an
-    // IMAGE_LOAD_CONFIG_DIRECTORY in the image. I'm guessing that MS just broke
-    // this API and decided not to tell anybody.
+    // IMAGE_LOAD_CONFIG_DIRECTORY in the image. Microsoft never bothered
+    // to update the internal size check, and still compares it against 0x40
+    // (the Windows XP load config size).
+    // loadConfig_.Size = sizeof(dir.Size);
     // if (!GetImageConfigInformation(&loadedImage, &loadConfig_)) {
     //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY: " << GetLastError() << endl;
     // }
@@ -57,7 +59,8 @@ void Checksec::process() {
     IMAGE_SECTION_HEADER sectionHeader = {0};
 
     // Find the section that contains the load config directory.
-    // This should always be .rdata, but there's no telling with Windows.
+    // This should always be .rdata, but who knows?
+    // TODO(ww): We should be able to use ImageDirectoryEntryToDataEx here.
     for (uint64_t i = 0; i < loadedImage.NumberOfSections; i++) {
         if (loadedImage.Sections[i].VirtualAddress < dir.VirtualAddress
             && loadedImage.Sections[i].VirtualAddress > sectionHeader.VirtualAddress)
@@ -71,12 +74,14 @@ void Checksec::process() {
                               + sectionHeader.PointerToRawData;
 
     size_t loadConfigSize = (dir.Size < sizeof(loadConfig_)) ? dir.Size : sizeof(loadConfig_);
+    DWORD txsize = 0;
 
+    SetFilePointer(loadedImage.hFile, (LONG) loadConfigOffset, NULL, FILE_BEGIN);
+    ReadFile(loadedImage.hFile, &loadConfig_, (DWORD) loadConfigSize, &txsize, NULL);
 
-
-    // After all that, we can finally read the load config directory.
-    filestream_.seekg(loadConfigOffset, ios_base::beg);
-    filestream_.read((char *) &loadConfig_, loadConfigSize);
+    if (txsize != loadConfigSize) {
+        throw "Warn: short read of load config from file (I/O error?)";
+    }
 
     UnMapAndLoad(&loadedImage);
 

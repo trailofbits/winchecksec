@@ -17,14 +17,7 @@ namespace checksec {
 class Checksec  {
 public:
     Checksec( string filepath ) :
-            filepath_(filepath),
-            filestream_( filepath_, ios::binary ) {
-
-        if( !filestream_.is_open() ) {
-            string msg = "Unable to open " + filepath;
-            cerr << msg << endl;
-            throw msg;
-        }
+            filepath_(filepath) {
 
         process();
 
@@ -54,7 +47,6 @@ private:
 
     void                        process();
     string                      filepath_;
-    ifstream                    filestream_;
     uint16_t                    imageCharacteristics_ = 0;
     uint16_t                    dllCharacteristics_ = 0;
     IMAGE_LOAD_CONFIG_DIRECTORY loadConfig_ = {0};
