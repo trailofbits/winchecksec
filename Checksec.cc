@@ -18,14 +18,14 @@ namespace checksec {
 
 void Checksec::process() {
 
-    LOADED_IMAGE *loadedImage = ImageLoad(filepath_.c_str(), NULL);
+    LOADED_IMAGE loadedImage = {0};
 
-    if (!loadedImage) {
+    if (!MapAndLoad(filepath_.c_str(), NULL, &loadedImage, true, true)) {
         throw "Couldn't load file; corrupt or not a PE?";
     }
 
-    IMAGE_FILE_HEADER imageFileHeader = loadedImage->FileHeader->FileHeader;
-    IMAGE_OPTIONAL_HEADER imageOptionalHeader = loadedImage->FileHeader->OptionalHeader;
+    IMAGE_FILE_HEADER imageFileHeader = loadedImage.FileHeader->FileHeader;
+    IMAGE_OPTIONAL_HEADER imageOptionalHeader = loadedImage.FileHeader->OptionalHeader;
 
     imageCharacteristics_ = imageFileHeader.Characteristics;
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
@@ -34,7 +34,7 @@ void Checksec::process() {
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
         cerr << "Warn: short image data directory vector" << endl;
-        ImageUnload(loadedImage);
+        UnMapAndLoad(&loadedImage);
         return;
     }
 
@@ -43,26 +43,26 @@ void Checksec::process() {
 
     if ( !dir.VirtualAddress || !dir.Size ) {
         cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
-        ImageUnload(loadedImage);
+        UnMapAndLoad(&loadedImage);
         return;
     }
 
     // NOTE(ww): This always returns false, even when there definitely is an
     // IMAGE_LOAD_CONFIG_DIRECTORY in the image. I'm guessing that MS just broke
     // this API and decided not to tell anybody.
-    // if (!GetImageConfigInformation(loadedImage, &loadConfig_)) {
-    //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY" << endl;
+    // if (!GetImageConfigInformation(&loadedImage, &loadConfig_)) {
+    //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY: " << GetLastError() << endl;
     // }
 
     IMAGE_SECTION_HEADER sectionHeader = {0};
 
     // Find the section that contains the load config directory.
     // This should always be .rdata, but there's no telling with Windows.
-    for (uint64_t i = 0; i < loadedImage->NumberOfSections; i++) {
-        if (loadedImage->Sections[i].VirtualAddress < dir.VirtualAddress
-            && loadedImage->Sections[i].VirtualAddress > sectionHeader.VirtualAddress)
+    for (uint64_t i = 0; i < loadedImage.NumberOfSections; i++) {
+        if (loadedImage.Sections[i].VirtualAddress < dir.VirtualAddress
+            && loadedImage.Sections[i].VirtualAddress > sectionHeader.VirtualAddress)
         {
-            sectionHeader = loadedImage->Sections[i];
+            sectionHeader = loadedImage.Sections[i];
         }
     }
 
@@ -78,7 +78,7 @@ void Checksec::process() {
     filestream_.seekg(loadConfigOffset, ios_base::beg);
     filestream_.read((char *) &loadConfig_, loadConfigSize);
 
-    ImageUnload(loadedImage);
+    UnMapAndLoad(&loadedImage);
 
 }
 
