@@ -16,8 +16,8 @@ using json = nlohmann::json;
 
 namespace checksec {
 
-void Checksec::process() {
-
+void Checksec::process()
+{
     LOADED_IMAGE loadedImage = {0};
 
     if (!MapAndLoad(filepath_.c_str(), NULL, &loadedImage, true, true)) {
@@ -41,7 +41,7 @@ void Checksec::process() {
     // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
     IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
 
-    if ( !dir.VirtualAddress || !dir.Size ) {
+    if (!dir.VirtualAddress || !dir.Size) {
         cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
         UnMapAndLoad(&loadedImage);
         return;
@@ -80,7 +80,7 @@ void Checksec::process() {
     ReadFile(loadedImage.hFile, &loadConfig_, (DWORD) loadConfigSize, &txsize, NULL);
 
     if (txsize != loadConfigSize) {
-        throw "Warn: short read of load config from file (I/O error?)";
+        throw "Short read of load config from file (I/O error?)";
     }
 
     UnMapAndLoad(&loadedImage);
@@ -88,11 +88,13 @@ void Checksec::process() {
 }
 
 
-json Checksec::toJson()     const  {
+json Checksec::toJson() const
+{
     return this->operator json();
 }
 
-Checksec::operator json() const {
+Checksec::operator json() const
+{
     return json {
         { "dynamicBase",    isDynamicBase() },
         { "aslr",           isASLR() },
@@ -110,41 +112,50 @@ Checksec::operator json() const {
     };
 }
 
-const bool Checksec::isDynamicBase()      const  {
+const bool Checksec::isDynamicBase() const
+{
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
 }
 
-const bool Checksec::isASLR()             const {
+const bool Checksec::isASLR() const
+{
     return !(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) && isDynamicBase();
 }
 
-const bool Checksec::isHighEntropyVA()    const {
+const bool Checksec::isHighEntropyVA() const
+{
     // NOTE(ww): Set by /HIGHENTROPYVA, but not exposed anywhere as a constant.
     // Only relevant on 64-bit machines with 64-bit images.
     return dllCharacteristics_ & 0x20;
 }
 
-const bool Checksec::isForceIntegrity()   const {
+const bool Checksec::isForceIntegrity() const
+{
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY;
 }
 
-const bool Checksec::isNX()               const {
+const bool Checksec::isNX() const
+{
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT;
 }
 
-const bool Checksec::isIsolation()        const {
+const bool Checksec::isIsolation() const
+{
     return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_ISOLATION);
 }
 
-const bool Checksec::isSEH()              const {
+const bool Checksec::isSEH() const
+{
     return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_SEH);
 }
 
-const bool Checksec::isCFG()              const {
+const bool Checksec::isCFG() const
+{
     return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF;
 }
 
-const bool Checksec::isAuthenticode()     const {
+const bool Checksec::isAuthenticode() const
+{
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::wstring filePathW = converter.from_bytes(filepath_);
 
@@ -182,7 +193,8 @@ const bool Checksec::isAuthenticode()     const {
     return status == ERROR_SUCCESS;
 }
 
-const bool Checksec::isRFG() const {
+const bool Checksec::isRFG() const
+{
     // NOTE(ww): a load config under 148 bytes implies the absence of the GuardFlags field.
     if (loadConfig_.Size < 148) {
         cerr << "Warn: no or short load config, assuming no RFG" << endl;
@@ -194,7 +206,8 @@ const bool Checksec::isRFG() const {
         && (loadConfig_.GuardFlags & 0x00040000 || loadConfig_.GuardFlags & 0x00080000);
 }
 
-const bool Checksec::isSafeSEH() const {
+const bool Checksec::isSafeSEH() const
+{
     // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH fields.
     if (loadConfig_.Size < 112) {
         cerr << "Warn: no or short load config, assuming no SafeSEH" << endl;
@@ -204,7 +217,8 @@ const bool Checksec::isSafeSEH() const {
     return isSEH() && loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
 }
 
-const bool Checksec::isGS() const {
+const bool Checksec::isGS() const
+{
     // NOTE(ww): a load config under 96 bytes implies the absence of the SecurityCookie field.
     if (loadConfig_.Size < 96) {
         cerr << "Warn: no or short load config, assuming no GS" << endl;
@@ -216,7 +230,8 @@ const bool Checksec::isGS() const {
     return loadConfig_.SecurityCookie != 0;
 }
 
-ostream& operator<<( ostream& os, Checksec& self ) {
+ostream& operator<<(ostream& os, Checksec& self)
+{
     json j = self.operator json();
     os << "Dynamic Base    : " << j["dynamicBase"] << endl;
     os << "ASLR            : " << j["aslr"] << endl;
