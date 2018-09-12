@@ -74,6 +74,8 @@ void Checksec::process()
     size_t loadConfigSize = (dir.Size < sizeof(loadConfig_)) ? dir.Size : sizeof(loadConfig_);
     DWORD txsize = 0;
 
+    // TODO(ww): MapAndLoad maps the image into memory, so we could probably just
+    // `memcpy` from `loadedImage.MappedAddress + loadConfigOffset` here.
     SetFilePointer(loadedImage.hFile, (LONG) loadConfigOffset, NULL, FILE_BEGIN);
     ReadFile(loadedImage.hFile, &loadConfig_, (DWORD) loadConfigSize, &txsize, NULL);
 
