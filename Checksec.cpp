@@ -16,7 +16,8 @@ using json = nlohmann::json;
 
 namespace checksec {
 
-void Checksec::process()
+Checksec::Checksec(string filepath)
+: filepath_(filepath)
 {
     LOADED_IMAGE loadedImage = {0};
 
@@ -86,7 +87,6 @@ void Checksec::process()
     end:
     UnMapAndLoad(&loadedImage);
 }
-
 
 json Checksec::toJson() const
 {

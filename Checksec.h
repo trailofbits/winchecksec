@@ -16,12 +16,7 @@ namespace checksec {
 class Checksec
 {
     public:
-        Checksec(string filepath):
-            filepath_(filepath)
-        {
-            process();
-        }
-
+        Checksec(string filepath);
 
         json toJson() const;
 
