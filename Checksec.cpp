@@ -33,7 +33,7 @@ void Checksec::process()
     // Warn and return early if the image data directory vector
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
-        cerr << "Warn: short image data directory vector" << endl;
+        cerr << "Warn: short image data directory vector" << "\n";
         goto end;
     }
 
@@ -41,7 +41,7 @@ void Checksec::process()
     IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
 
     if (!dir.VirtualAddress || !dir.Size) {
-        cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
+        cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << "\n";
         goto end;
     }
 
@@ -51,7 +51,7 @@ void Checksec::process()
     // (the Windows XP load config size).
     // loadConfig_.Size = sizeof(dir.Size);
     // if (!GetImageConfigInformation(&loadedImage, &loadConfig_)) {
-    //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY: " << GetLastError() << endl;
+    //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY: " << GetLastError() << "\n";
     // }
 
     IMAGE_SECTION_HEADER sectionHeader = {0};
@@ -197,7 +197,7 @@ const bool Checksec::isRFG() const
 {
     // NOTE(ww): a load config under 148 bytes implies the absence of the GuardFlags field.
     if (loadConfig_.Size < 148) {
-        cerr << "Warn: no or short load config, assuming no RFG" << endl;
+        cerr << "Warn: no or short load config, assuming no RFG" << "\n";
         return false;
     }
 
@@ -210,7 +210,7 @@ const bool Checksec::isSafeSEH() const
 {
     // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH fields.
     if (loadConfig_.Size < 112) {
-        cerr << "Warn: no or short load config, assuming no SafeSEH" << endl;
+        cerr << "Warn: no or short load config, assuming no SafeSEH" << "\n";
         return false;
     }
 
@@ -221,7 +221,7 @@ const bool Checksec::isGS() const
 {
     // NOTE(ww): a load config under 96 bytes implies the absence of the SecurityCookie field.
     if (loadConfig_.Size < 96) {
-        cerr << "Warn: no or short load config, assuming no GS" << endl;
+        cerr << "Warn: no or short load config, assuming no GS" << "\n";
         return false;
     }
 
@@ -233,18 +233,18 @@ const bool Checksec::isGS() const
 ostream& operator<<(ostream& os, Checksec& self)
 {
     json j = self.operator json();
-    os << "Dynamic Base    : " << j["dynamicBase"] << endl;
-    os << "ASLR            : " << j["aslr"] << endl;
-    os << "High Entropy VA : " << j["highEntropyVA"] << endl;
-    os << "Force Integrity : " << j["forceIntegrity"] << endl;
-    os << "Isolation       : " << j["isolation"] << endl;
-    os << "NX              : " << j["nx"] << endl;
-    os << "SEH             : " << j["seh"] << endl;
-    os << "CFG             : " << j["cfg"] << endl;
-    os << "RFG             : " << j["rfg"] << endl;
-    os << "SafeSEH         : " << j["safeSEH"] << endl;
-    os << "GS              : " << j["gs"] << endl;
-    os << "Authenticode    : " << j["authenticode"] << endl;
+    os << "Dynamic Base    : " << j["dynamicBase"] << "\n";
+    os << "ASLR            : " << j["aslr"] << "\n";
+    os << "High Entropy VA : " << j["highEntropyVA"] << "\n";
+    os << "Force Integrity : " << j["forceIntegrity"] << "\n";
+    os << "Isolation       : " << j["isolation"] << "\n";
+    os << "NX              : " << j["nx"] << "\n";
+    os << "SEH             : " << j["seh"] << "\n";
+    os << "CFG             : " << j["cfg"] << "\n";
+    os << "RFG             : " << j["rfg"] << "\n";
+    os << "SafeSEH         : " << j["safeSEH"] << "\n";
+    os << "GS              : " << j["gs"] << "\n";
+    os << "Authenticode    : " << j["authenticode"] << "\n";
     return os;
 }
 
