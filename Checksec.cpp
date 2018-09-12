@@ -225,8 +225,6 @@ const bool Checksec::isGS() const
         return false;
     }
 
-    // TODO(ww): Handle the edge case where the user defines a custom entry point
-    // and fails to call __security_init_cookie().
     return loadConfig_.SecurityCookie != 0;
 }
 
