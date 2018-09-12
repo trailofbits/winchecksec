@@ -4,15 +4,15 @@ using namespace std;
 
 void usage(char* argv[])
 {
-    cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>" << endl;
-    cerr << "Example: " << argv[0] << " -j doom2.exe" << endl;
-    cerr << "  -j will output json to stdout " << endl;
+    cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>" << "\n";
+    cerr << "Example: " << argv[0] << " -j doom2.exe" << "\n";
+    cerr << "  -j will output json to stdout " << "\n";
 }
 
 int main(int argc, char* argv[])
 {
     if (argc != 2 && argc != 3) {
-        cerr << argc << endl;
+        cerr << argc << "\n";
         usage(argv);
         return -__LINE__;
     }
@@ -38,16 +38,19 @@ int main(int argc, char* argv[])
         checksec::Checksec csec = path;
 
         if (jsonOutput) {
-            cout << csec.toJson() << endl;
-        } else {
-            cout << csec << endl;
+            cout << csec.toJson() << "\n";
         }
-    } catch (const char *x1) {
-        cerr << x1 << endl;
+        else {
+            cout << csec << "\n";
+        }
+    }
+    catch (checksec::ChecksecError& error) {
+        cerr << error.what() << "\n";
         usage(argv);
         return -__LINE__;
-    } catch (...) {
-        cerr << "General error" << endl;
+    }
+    catch (...) {
+        cerr << "General error" << "\n";
         usage(argv);
         return -__LINE__;
     }

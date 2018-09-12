@@ -22,7 +22,7 @@ Checksec::Checksec(string filepath)
     LOADED_IMAGE loadedImage = {0};
 
     if (!MapAndLoad(filepath_.c_str(), NULL, &loadedImage, true, true)) {
-        throw "Couldn't load file; corrupt or not a PE?";
+        throw ChecksecError("Couldn't load file; corrupt or not a PE?");
     }
 
     IMAGE_FILE_HEADER imageFileHeader = loadedImage.FileHeader->FileHeader;
@@ -81,7 +81,7 @@ Checksec::Checksec(string filepath)
     ReadFile(loadedImage.hFile, &loadConfig_, (DWORD) loadConfigSize, &txsize, NULL);
 
     if (txsize != loadConfigSize) {
-        throw "Short read of load config from file (I/O error?)";
+        throw ChecksecError("Short read of load config from file (I/O error?)");
     }
 
     end:
