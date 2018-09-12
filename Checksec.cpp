@@ -59,7 +59,6 @@ Checksec::Checksec(string filepath)
 
     // Find the section that contains the load config directory.
     // This should always be .rdata, but who knows?
-    // TODO(ww): We should be able to use ImageDirectoryEntryToDataEx here.
     for (uint64_t i = 0; i < loadedImage.NumberOfSections; i++) {
         if (loadedImage.Sections[i].VirtualAddress < dir.VirtualAddress
             && loadedImage.Sections[i].VirtualAddress > sectionHeader.VirtualAddress)
