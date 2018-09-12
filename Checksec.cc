@@ -34,8 +34,7 @@ void Checksec::process()
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
         cerr << "Warn: short image data directory vector" << endl;
-        UnMapAndLoad(&loadedImage);
-        return;
+        goto end;
     }
 
     // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
@@ -43,8 +42,7 @@ void Checksec::process()
 
     if (!dir.VirtualAddress || !dir.Size) {
         cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << endl;
-        UnMapAndLoad(&loadedImage);
-        return;
+        goto end;
     }
 
     // NOTE(ww): This always returns false, even when there definitely is an
@@ -83,8 +81,8 @@ void Checksec::process()
         throw "Short read of load config from file (I/O error?)";
     }
 
+    end:
     UnMapAndLoad(&loadedImage);
-
 }
 
 
