@@ -61,10 +61,6 @@ Authenticode    : false
 `winchecksec` only takes one file at a time. To run it on multiple files or entire directories,
 wrap it in a loop.
 
-## License
-
-`winchecksec` is licensed under Apache 2.
-
 ## Statistics for different flags across EXEs on Windows 10
 
 Prevalence of various security features on a vanilla Windows 10 (1803) installation:
