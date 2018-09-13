@@ -12,7 +12,7 @@ void usage(char* argv[])
 int main(int argc, char* argv[])
 {
     if (argc != 2 && argc != 3) {
-        cerr << argc << "\n";
+        cerr << "Unexpected number of arguments" << "\n";
         usage(argv);
         return -__LINE__;
     }
