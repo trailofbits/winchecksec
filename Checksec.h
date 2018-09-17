@@ -38,6 +38,7 @@ public:
     const bool isRFG()              const;
     const bool isSafeSEH()          const;
     const bool isGS()               const;
+    const bool isDotNET()           const;
 
     operator json() const;
     friend ostream& operator<<(ostream& os, Checksec&);
@@ -47,6 +48,7 @@ private:
     string                      filepath_;
     uint16_t                    imageCharacteristics_ = 0;
     uint16_t                    dllCharacteristics_ = 0;
+    IMAGE_DATA_DIRECTORY        clrConfig_ = {0};
     IMAGE_LOAD_CONFIG_DIRECTORY loadConfig_ = {0};
 };
 

@@ -31,10 +31,17 @@ Checksec::Checksec(string filepath)
     imageCharacteristics_ = imageFileHeader.Characteristics;
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
 
+    if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR + 1) {
+        cerr << "Warn: shrot image data directory vector (no CLR info?)" << "\n";
+        goto end;
+    }
+
+    clrConfig_ = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+
     // Warn and return early if the image data directory vector
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
-        cerr << "Warn: short image data directory vector" << "\n";
+        cerr << "Warn: short image data directory vector (no load config?)" << "\n";
         goto end;
     }
 
@@ -105,6 +112,7 @@ Checksec::operator json() const
         { "safeSEH",        isSafeSEH() },
         { "gs",             isGS() },
         { "authenticode",   isAuthenticode() },
+        { "dotNET",         isDotNET() },
         { "path",           filepath_ },
     };
 }
@@ -116,7 +124,11 @@ const bool Checksec::isDynamicBase() const
 
 const bool Checksec::isASLR() const
 {
-    return !(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) && isDynamicBase();
+    // A binary is ASLR'd if:
+    // * It was linked with /DYNAMICBASE and has *not* had its relocation entries stripped, or
+    // * It's managed by the CLR, which is always ASLR'd.
+    return (!(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) && isDynamicBase()) ||
+        isDotNET();
 }
 
 const bool Checksec::isHighEntropyVA() const
@@ -225,6 +237,11 @@ const bool Checksec::isGS() const
     return loadConfig_.SecurityCookie != 0;
 }
 
+const bool Checksec::isDotNET() const
+{
+    return clrConfig_.VirtualAddress != 0;
+}
+
 ostream& operator<<(ostream& os, Checksec& self)
 {
     json j = self.operator json();
@@ -240,6 +257,7 @@ ostream& operator<<(ostream& os, Checksec& self)
     os << "SafeSEH         : " << j["safeSEH"] << "\n";
     os << "GS              : " << j["gs"] << "\n";
     os << "Authenticode    : " << j["authenticode"] << "\n";
+    os << ".NET            : " << j["dotNET"] << "\n";
     return os;
 }
 
