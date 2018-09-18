@@ -145,7 +145,7 @@ const bool Checksec::isForceIntegrity() const
 
 const bool Checksec::isNX() const
 {
-    return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT;
+    return (dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT) || isDotNET();
 }
 
 const bool Checksec::isIsolation() const
