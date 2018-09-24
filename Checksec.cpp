@@ -135,7 +135,9 @@ const bool Checksec::isHighEntropyVA() const
 {
     // NOTE(ww): Set by /HIGHENTROPYVA, but not exposed anywhere as a constant.
     // Only relevant on 64-bit machines with 64-bit images.
-    return dllCharacteristics_ & 0x20;
+    // NOTE(ww): Additionally, don't count a binary as high-entropy capable
+    // if it isn't also ASLR'd.
+    return (dllCharacteristics_ & 0x20) && isASLR();
 }
 
 const bool Checksec::isForceIntegrity() const
