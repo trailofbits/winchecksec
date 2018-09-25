@@ -2,11 +2,18 @@
 
 using namespace std;
 
+static string VERSION = "1.0.0";
+
 void usage(char* argv[])
 {
     cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>" << "\n";
     cerr << "Example: " << argv[0] << " -j doom2.exe" << "\n";
     cerr << "  -j will output json to stdout " << "\n";
+}
+
+void version()
+{
+    cerr << "Winchecksec version " << VERSION << "\n";
 }
 
 int main(int argc, char* argv[])
@@ -22,11 +29,21 @@ int main(int argc, char* argv[])
 
     switch (argc) {
         case 2:
+            if (string(argv[1]) == "-V") {
+                version();
+                return 0;
+            }
             path = argv[1];
             break;
         case 3:
-            jsonOutput = ("-j" == string(argv[1]));
-            path = argv[2];
+            if (string(argv[1]) == "-j") {
+                jsonOutput = true;
+                path = argv[2];
+            }
+            else {
+                usage(argv);
+                return -__LINE__;
+            }
             break;
         default:
             usage(argv);
