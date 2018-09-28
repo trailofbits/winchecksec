@@ -26,3 +26,7 @@ before_build:
     cmake --version
 
     cmake .. -G %generator%
+
+test_script:
+- ps: >-
+    ..\test.ps1
