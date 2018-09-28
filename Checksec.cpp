@@ -81,12 +81,7 @@ Checksec::Checksec(string filepath)
     size_t loadConfigSize = (dir.Size < sizeof(loadConfig_)) ? dir.Size : sizeof(loadConfig_);
     DWORD txsize = 0;
 
-    SetFilePointer(loadedImage.hFile, (LONG) loadConfigOffset, NULL, FILE_BEGIN);
-    ReadFile(loadedImage.hFile, &loadConfig_, (DWORD) loadConfigSize, &txsize, NULL);
-
-    if (txsize != loadConfigSize) {
-        throw ChecksecError("Short read of load config from file (I/O error?)");
-    }
+    memcpy_s(&loadConfig_, loadConfigSize, loadedImage.MappedAddress, loadConfigSize);
 
     end:
     UnMapAndLoad(&loadedImage);
