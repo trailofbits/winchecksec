@@ -72,44 +72,6 @@ Checksec::Checksec(string filepath)
         return;
     }
 
-#if 0
-    // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
-    IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
-
-    if (!dir.VirtualAddress || !dir.Size) {
-        cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << "\n";
-        return;
-    }
-
-    // NOTE(ww): This always returns false, even when there definitely is an
-    // IMAGE_LOAD_CONFIG_DIRECTORY in the image. Microsoft never bothered
-    // to update the internal size check, and still compares it against 0x40
-    // (the Windows XP load config size).
-    // loadConfig_.Size = sizeof(dir.Size);
-    // if (!GetImageConfigInformation(&loadedImage, &loadConfig_)) {
-    //     cerr << "Warn: Couldn't retrieve IMAGE_LOAD_CONFIG_DIRECTORY: " << GetLastError() << "\n";
-    // }
-
-    IMAGE_SECTION_HEADER sectionHeader = {0};
-    // Find the section that contains the load config directory.
-    // This should always be .rdata, but who knows?
-    for (uint64_t i = 0; i < loadedImage.NumberOfSections; i++) {
-        if (loadedImage.Sections[i].VirtualAddress < dir.VirtualAddress
-            && loadedImage.Sections[i].VirtualAddress > sectionHeader.VirtualAddress)
-        {
-            sectionHeader = loadedImage.Sections[i];
-        }
-    }
-
-    size_t loadConfigOffset = dir.VirtualAddress
-                              - sectionHeader.VirtualAddress
-                              + sectionHeader.PointerToRawData;
-
-    size_t loadConfigSize = (dir.Size < sizeof(loadConfig_)) ? dir.Size : sizeof(loadConfig_);
-    DWORD txsize = 0;
-
-    memcpy_s(&loadConfig_, loadConfigSize, loadedImage.MappedAddress, loadConfigSize);
-#else
     ULONG loadConfigDirectoryEntrySize = 0u;
     const PVOID loadConfigDirectoryEntryData = ImageDirectoryEntryToDataEx(
             loadedImage.MappedAddress,
@@ -124,8 +86,6 @@ Checksec::Checksec(string filepath)
     // cout << "direntry size " << loadConfigDirectoryEntrySize << " sizeof(loadConfig_) " << sizeof(loadConfig_) << endl;
 
     memcpy_s(&loadConfig_, sizeof(loadConfig_), loadConfigDirectoryEntryData, loadConfigDirectoryEntrySize);
-#endif
-
 }
 
 json Checksec::toJson() const
