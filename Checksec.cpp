@@ -23,24 +23,24 @@ class LoadedImage : public LOADED_IMAGE
 public:
     explicit LoadedImage(const std::string path)
     {
-        if (!MapAndLoad(path.c_str(), NULL, &get(), true, true)) {
+        if (!MapAndLoad(path.c_str(), NULL, get(), true, true)) {
             throw ChecksecError("Couldn't load file; corrupt or not a PE?");
         }
     }
     ~LoadedImage()
     {
-        UnMapAndLoad(&get());
+        UnMapAndLoad(get());
     }
 
     // can't make copies of LoadedImage
-    LoadedImage(LoadedImage&) = delete;
+    LoadedImage(const LoadedImage&) = delete;
     LoadedImage& operator=(const LoadedImage&) = delete;
 
 private:
 
-    LOADED_IMAGE &get()
+    LOADED_IMAGE *get()
     {
-        return *this;
+        return &(*this);
     }
 };
 
