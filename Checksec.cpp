@@ -16,14 +16,41 @@ using json = nlohmann::json;
 
 namespace checksec {
 
+
+// RAII wrapper for LOADED_IMAGE
+class LoadedImage : public LOADED_IMAGE
+{
+public:
+    explicit LoadedImage(const std::string path)
+    {
+        if (!MapAndLoad(path.c_str(), NULL, &get(), true, true)) {
+            throw ChecksecError("Couldn't load file; corrupt or not a PE?");
+        }
+    }
+    ~LoadedImage()
+    {
+        UnMapAndLoad(&get());
+    }
+
+    // can't make copies of LoadedImage
+    LoadedImage(LoadedImage&) = delete;
+    LoadedImage& operator=(const LoadedImage&) = delete;
+
+private:
+
+    LOADED_IMAGE &get()
+    {
+        return *this;
+    }
+};
+
+
+
 Checksec::Checksec(string filepath)
 : filepath_(filepath)
 {
-    LOADED_IMAGE loadedImage = {0};
+    LoadedImage loadedImage{filepath};
 
-    if (!MapAndLoad(filepath_.c_str(), NULL, &loadedImage, true, true)) {
-        throw ChecksecError("Couldn't load file; corrupt or not a PE?");
-    }
 
     IMAGE_FILE_HEADER imageFileHeader = loadedImage.FileHeader->FileHeader;
     IMAGE_OPTIONAL_HEADER imageOptionalHeader = loadedImage.FileHeader->OptionalHeader;
@@ -32,8 +59,8 @@ Checksec::Checksec(string filepath)
     dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
 
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR + 1) {
-        cerr << "Warn: shrot image data directory vector (no CLR info?)" << "\n";
-        goto end;
+        cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
+        return;
     }
 
     clrConfig_ = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
@@ -42,15 +69,16 @@ Checksec::Checksec(string filepath)
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
         cerr << "Warn: short image data directory vector (no load config?)" << "\n";
-        goto end;
+        return;
     }
 
+#if 0
     // https://docs.microsoft.com/en-us/windows/desktop/api/winnt/ns-winnt-_image_data_directory
     IMAGE_DATA_DIRECTORY dir = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG];
 
     if (!dir.VirtualAddress || !dir.Size) {
         cerr << "Warn: No IMAGE_LOAD_CONFIG_DIRECTORY in the PE" << "\n";
-        goto end;
+        return;
     }
 
     // NOTE(ww): This always returns false, even when there definitely is an
@@ -63,7 +91,6 @@ Checksec::Checksec(string filepath)
     // }
 
     IMAGE_SECTION_HEADER sectionHeader = {0};
-
     // Find the section that contains the load config directory.
     // This should always be .rdata, but who knows?
     for (uint64_t i = 0; i < loadedImage.NumberOfSections; i++) {
@@ -82,9 +109,23 @@ Checksec::Checksec(string filepath)
     DWORD txsize = 0;
 
     memcpy_s(&loadConfig_, loadConfigSize, loadedImage.MappedAddress, loadConfigSize);
+#else
+    ULONG loadConfigDirectoryEntrySize = 0u;
+    const PVOID loadConfigDirectoryEntryData = ImageDirectoryEntryToDataEx(
+            loadedImage.MappedAddress,
+            TRUE,
+            IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
+            &loadConfigDirectoryEntrySize,
+            0);
+    if (loadConfigDirectoryEntryData == 0) {
+        cerr << "Warn: No IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG in the PE" << "\n";
+        return;
+    }
+    // cout << "direntry size " << loadConfigDirectoryEntrySize << " sizeof(loadConfig_) " << sizeof(loadConfig_) << endl;
 
-    end:
-    UnMapAndLoad(&loadedImage);
+    memcpy_s(&loadConfig_, sizeof(loadConfig_), loadConfigDirectoryEntryData, loadConfigDirectoryEntrySize);
+#endif
+
 }
 
 json Checksec::toJson() const
