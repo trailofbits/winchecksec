@@ -75,7 +75,7 @@ Checksec::Checksec(string filepath)
     ULONG loadConfigDirectoryEntrySize = 0u;
     const PVOID loadConfigDirectoryEntryData = ImageDirectoryEntryToDataEx(
             loadedImage.MappedAddress,
-            TRUE,
+            FALSE,
             IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
             &loadConfigDirectoryEntrySize,
             0);
