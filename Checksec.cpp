@@ -83,7 +83,6 @@ Checksec::Checksec(string filepath)
         cerr << "Warn: No IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG in the PE" << "\n";
         return;
     }
-    // cout << "direntry size " << loadConfigDirectoryEntrySize << " sizeof(loadConfig_) " << sizeof(loadConfig_) << endl;
 
     memcpy_s(&loadConfig_, sizeof(loadConfig_), loadConfigDirectoryEntryData, loadConfigDirectoryEntrySize);
 }
