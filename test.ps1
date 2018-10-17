@@ -2,13 +2,13 @@
 
 $winchecksecPath = Join-Path -Path (Get-ChildItem Env:CONFIGURATION).Value -ChildPath "winchecksec.exe"
 
+Write-Host $winchecksecPath
+
 $winchecksecOutput = & $winchecksecPath -j $winchecksecPath
 
 Write-Host $winchecksecOutput
 
-$parser = New-Object Web.Script.Serialization.JavaScriptSerializer
-$parser.MaxJsonLength = $winchecksecOutput.length
-$winchecksecObj = $parser.DeserializeObject($winchecksecOutput)
+$winchecksecObj = ConvertFrom-Json -InputObject $winchecksecOutput
 
 $boolKeys = @(
     "dynamicBase",
@@ -26,14 +26,14 @@ $boolKeys = @(
     "dotNET")
 
 foreach ($boolKey in $boolKeys) {
-    $actual = $winchecksecObj[$boolKey].GetType()
+    $actual = $winchecksecObj.$boolKey.GetType()
     if (-not $actual -Eq [bool]) {
         Write-Host "Fail: expected $boolKey to be a bool, but got $actual instead"
         exit 1
     }
 }
 
-$actual = $winchecksecObj["path"].GetType()
+$actual = $winchecksecObj.path.GetType()
 if (-not $actual -Eq [String]) {
     Write-Host "Fail: expected path to be a String, but got $actual instead"
     exit 1
