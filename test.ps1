@@ -4,7 +4,7 @@ $winchecksecPath = Join-Path -Path (Get-ChildItem Env:CONFIGURATION).Value -Chil
 
 Write-Host $winchecksecPath
 
-$winchecksecOutput = & $winchecksecPath -j $winchecksecPath
+& $winchecksecPath -j $winchecksecPath | Tee-Object -Variable winchecksecOutput
 
 Write-Host $winchecksecOutput
 
