@@ -114,7 +114,7 @@ Checksec::operator json() const
 
 const bool Checksec::isDynamicBase() const
 {
-    return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE;
+    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE);
 }
 
 const bool Checksec::isASLR() const
@@ -137,7 +137,7 @@ const bool Checksec::isHighEntropyVA() const
 
 const bool Checksec::isForceIntegrity() const
 {
-    return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY;
+    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY);
 }
 
 const bool Checksec::isNX() const
@@ -157,7 +157,7 @@ const bool Checksec::isSEH() const
 
 const bool Checksec::isCFG() const
 {
-    return dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF;
+    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF);
 }
 
 const bool Checksec::isAuthenticode() const
