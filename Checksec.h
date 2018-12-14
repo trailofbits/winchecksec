@@ -1,5 +1,14 @@
-#ifndef CHECKSEC_H
-#define CHECKSEC_H
+#pragma once
+
+#ifdef _WINCHECKSEC_STANDALONE
+#define EXPORT
+#else
+#ifdef _WINCHECKSEC_EXPORT
+#define EXPORT __declspec(dllexport)
+#else
+#define EXPORT __declspec(dllimport)
+#endif
+#endif
 
 #include <Windows.h>
 
@@ -13,13 +22,13 @@ using namespace std;
 
 namespace checksec {
 
-class ChecksecError : public std::runtime_error
+class EXPORT ChecksecError : public std::runtime_error
 {
 public:
     ChecksecError(const char *what) : std::runtime_error(what) {}
 };
 
-class Checksec
+class EXPORT Checksec
 {
 public:
     Checksec(string filepath);
@@ -53,4 +62,3 @@ private:
 };
 
 } // namespace
-#endif
