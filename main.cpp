@@ -2,7 +2,7 @@
 
 using namespace std;
 
-static string VERSION = "1.1.0";
+static string VERSION = "1.1.1";
 
 void usage(char* argv[])
 {
