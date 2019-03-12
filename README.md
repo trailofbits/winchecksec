@@ -1,8 +1,6 @@
 winchecksec
 ===========
 
-[![Build status](https://ci.appveyor.com/api/projects/status/a79mdqa09h27rafi/branch/master?svg=true)](https://ci.appveyor.com/project/woodruffw/winchecksec/branch/master)
-
 `winchecksec` performs static detection of common Windows security features.
 
 The following security features are currently detected:
