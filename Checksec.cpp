@@ -4,6 +4,9 @@
 #include <softpub.h>
 #include <imagehlp.h>
 
+#include <parser-library/parse.h>
+using namespace pe-parse;
+
 #include <ostream>
 #include <codecvt>
 
@@ -18,18 +21,19 @@ namespace checksec {
 
 
 // RAII wrapper for LOADED_IMAGE
-class LoadedImage : public LOADED_IMAGE
+// Replace LOADED_IMAGE with ???
+class LoadedImage : public parsed_pe
 {
 public:
     explicit LoadedImage(const std::string path)
     {
-        if (!MapAndLoad(path.c_str(), NULL, get(), true, true)) {
+        if (!ParsePEFromFile(path.c_str()) {
             throw ChecksecError("Couldn't load file; corrupt or not a PE?");
         }
     }
     ~LoadedImage()
     {
-        UnMapAndLoad(get());
+        DestructParsedPe(get());
     }
 
     // can't make copies of LoadedImage
@@ -38,12 +42,11 @@ public:
 
 private:
 
-    LOADED_IMAGE *get()
+    parsed_pe *get()
     {
         return &(*this);
     }
 };
-
 
 
 Checksec::Checksec(string filepath)
@@ -51,27 +54,40 @@ Checksec::Checksec(string filepath)
 {
     LoadedImage loadedImage{filepath};
 
-
-    IMAGE_FILE_HEADER imageFileHeader = loadedImage.FileHeader->FileHeader;
-    IMAGE_OPTIONAL_HEADER imageOptionalHeader = loadedImage.FileHeader->OptionalHeader;
-
+    nt_header_32 *nt = &(loadedImage.peHeader.nt);
+    file_header *imageFileHeader = &(nt->FileHeader);
+    
     imageCharacteristics_ = imageFileHeader.Characteristics;
-    dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
-
-    if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR + 1) {
-        cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
-        return;
+ 
+    // Check whether we need a 32 or 32+ optional header.
+    if(nt->OptionalMagic == NT_OPTIONAL_64_MAGIC){
+	optional_header_64 *optionalHeader = &(nt->OptionalHeader);
+    	dllCharacteristics_ = optionalHeader->DllCharacteristics;
+	if(optionalHeader->NumberOfRvaAndSizes < DIR_COM_DESCRIPTOR + 1){
+	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
+	    return;
+	}
+    	clrConfig_ = optionalHeader.DataDirectory[DIR_COM_DESCRIPTOR];
+    } else {
+	optional_header_32 *optionalHeader = &(nt->OptionalHeader64);
+	dllCharacteristics_ = optionalHeader->DllCharacteristics;
+	if(optionalHeader->NumberOfRvaAndSizes < DIR_COM_DESCRIPTOR + 1){
+	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
+	    return;
+	}
+    	clrConfig_ = optionalHeader.DataDirectory[DIR_COM_DESCRIPTOR];
     }
-
-    clrConfig_ = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 
     // Warn and return early if the image data directory vector
     // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
+    /*
     if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
         cerr << "Warn: short image data directory vector (no load config?)" << "\n";
         return;
     }
+    */
 
+    /*
     ULONG loadConfigDirectoryEntrySize = 0u;
     const PVOID loadConfigDirectoryEntryData = ImageDirectoryEntryToDataEx(
             loadedImage.MappedAddress,
@@ -85,6 +101,7 @@ Checksec::Checksec(string filepath)
     }
 
     memcpy_s(&loadConfig_, sizeof(loadConfig_), loadConfigDirectoryEntryData, loadConfigDirectoryEntrySize);
+    */
 }
 
 json Checksec::toJson() const
