@@ -1,6 +1,8 @@
 winchecksec
 ===========
 
+[![Build Status](https://travis-ci.com/trailofbits/winchecksec.svg?branch=master)](https://travis-ci.com/trailofbits/winchecksec)
+
 `winchecksec` performs static detection of common Windows security features.
 
 The following security features are currently detected:
