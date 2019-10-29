@@ -26,13 +26,13 @@ public:
       throw ChecksecError("Couldn't load file; corrupt or not a PE?");
     }
   }
-  ~LoadedImage() { peparse::DestructParsedPE(get()); }
+  ~LoadedImage() { peparse::DestructParsedPE(pe_); }
 
   // can't make copies of LoadedImage
   LoadedImage(const LoadedImage &) = delete;
   LoadedImage &operator=(const LoadedImage &) = delete;
 
-  peparse::parsed_pe *get() { return pe_; }
+  peparse::parsed_pe *operator&() { return pe_; }
 
 private:
   peparse::parsed_pe *pe_;
@@ -41,7 +41,7 @@ private:
 Checksec::Checksec(string filepath) : filepath_(filepath) {
   LoadedImage loadedImage{filepath};
 
-  peparse::nt_header_32 nt = loadedImage.get()->peHeader.nt;
+  peparse::nt_header_32 nt = (&loadedImage)->peHeader.nt;
   peparse::file_header *imageFileHeader = &(nt.FileHeader);
 
   imageCharacteristics_ = imageFileHeader->Characteristics;
@@ -67,7 +67,7 @@ Checksec::Checksec(string filepath) : filepath_(filepath) {
     }
 
     if (!peparse::GetDataDirectoryEntry(
-            loadedImage.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+            (&loadedImage), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
       cerr << "Warn: No load config in the PE"
            << "\n";
       return;
@@ -98,7 +98,7 @@ Checksec::Checksec(string filepath) : filepath_(filepath) {
     }
 
     if (!peparse::GetDataDirectoryEntry(
-            loadedImage.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+            (&loadedImage), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
       cerr << "Warn: No load config in the PE"
            << "\n";
       return;
