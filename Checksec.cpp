@@ -52,15 +52,15 @@ Checksec::Checksec(string filepath)
 {
     LoadedImage loadedImage{filepath};
 
-    peparse::nt_header_32 *nt = &(loadedImage.peHeader.nt);
-    peparse::file_header *imageFileHeader = &(nt->FileHeader);
+    peparse::nt_header_32 nt = loadedImage.peHeader.nt;
+    peparse::file_header *imageFileHeader = &(nt.FileHeader);
     
     imageCharacteristics_ = imageFileHeader->Characteristics;
     std::vector<std::uint8_t> loadConfigData;
  
     // Check whether we need a 32 or 32+ optional header.
-    if(nt->OptionalMagic == peparse::NT_OPTIONAL_64_MAGIC){
-	peparse::optional_header_64 *optionalHeader = &(nt->OptionalHeader64);
+    if(nt.OptionalMagic == peparse::NT_OPTIONAL_64_MAGIC){
+	peparse::optional_header_64 *optionalHeader = &(nt.OptionalHeader64);
     	dllCharacteristics_ = optionalHeader->DllCharacteristics;
 	if(optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1){
 	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
@@ -77,6 +77,7 @@ Checksec::Checksec(string filepath)
 
 	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
 		cerr << "Warn: No load config in the PE" << "\n";
+		cerr << "Warn: 64" << peparse::GetPEErrString() << "\n"; 
    	}
 	peparse::image_load_config_64 loadConfig;
     	memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(), loadConfigData.size());
@@ -86,7 +87,7 @@ Checksec::Checksec(string filepath)
 	loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
 	loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
     } else {
-	peparse::optional_header_32 *optionalHeader = &(nt->OptionalHeader);
+	peparse::optional_header_32 *optionalHeader = &(nt.OptionalHeader);
 	dllCharacteristics_ = optionalHeader->DllCharacteristics;
 	if(optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1){
 	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
@@ -102,6 +103,8 @@ Checksec::Checksec(string filepath)
 
 	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
 		cerr << "Warn: No load config in the PE" << "\n";
+		cerr << "Warn: 32 " << peparse::GetPEErrString() << "\n"; 
+		cerr << "Warn: 32 " << nt.OptionalMagic << "\n";
    	}
 	peparse::image_load_config_32 loadConfig;
     	memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(), loadConfigData.size());
