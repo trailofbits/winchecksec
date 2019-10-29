@@ -21,7 +21,7 @@ The following security features are currently detected:
 
 ## Building
 
-`winchecksec` depends on pe-parse, and should build
+`winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse), and should build
 with any reasonably modern `cmake`. It'll audit binaries of any architecture,
 but you should build it as 64-bit:
 
