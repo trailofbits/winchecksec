@@ -15,6 +15,9 @@
 #include <string>
 #include <iostream>
 
+#define _PEPARSE_WINDOWS_CONFLICTS
+#include <parser-library/parse.h>
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -58,7 +61,8 @@ private:
     uint16_t                    imageCharacteristics_ = 0;
     uint16_t                    dllCharacteristics_ = 0;
     data_directory        clrConfig_ = {0};
-    IMAGE_LOAD_CONFIG_DIRECTORY loadConfig_ = {0};
+    peparse::image_load_config_32 loadConfig32_ = {0};
+    peparse::image_load_config_64 loadConfig64_ = {0};
 };
 
 } // namespace

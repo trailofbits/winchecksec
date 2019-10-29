@@ -2,13 +2,13 @@
 #include <winnt.h>
 #include <wincrypt.h>
 #include <softpub.h>
-#include <imagehlp.h>
 
+#define _PEPARSE_WINDOWS_CONFLICTS
 #include <parser-library/parse.h>
-using namespace pe-parse;
 
 #include <ostream>
 #include <codecvt>
+#include <vector>
 
 #include "Checksec.h"
 
@@ -20,20 +20,18 @@ using json = nlohmann::json;
 namespace checksec {
 
 
-// RAII wrapper for LOADED_IMAGE
-// Replace LOADED_IMAGE with ???
-class LoadedImage : public parsed_pe
+class LoadedImage : public peparse::parsed_pe
 {
 public:
     explicit LoadedImage(const std::string path)
     {
-        if (!ParsePEFromFile(path.c_str()) {
+        if (!peparse::ParsePEFromFile(path.c_str()) {
             throw ChecksecError("Couldn't load file; corrupt or not a PE?");
         }
     }
     ~LoadedImage()
     {
-        DestructParsedPe(get());
+    	peparse::DestructParsedPe(get());
     }
 
     // can't make copies of LoadedImage
@@ -42,7 +40,7 @@ public:
 
 private:
 
-    parsed_pe *get()
+	peparse::parsed_pe *get()
     {
         return &(*this);
     }
@@ -54,54 +52,55 @@ Checksec::Checksec(string filepath)
 {
     LoadedImage loadedImage{filepath};
 
-    nt_header_32 *nt = &(loadedImage.peHeader.nt);
-    file_header *imageFileHeader = &(nt->FileHeader);
+    peparse::nt_header_32 *nt = &(loadedImage.peHeader.nt);
+    peparse::file_header *imageFileHeader = &(nt->FileHeader);
     
     imageCharacteristics_ = imageFileHeader.Characteristics;
+    std::vector<std::uint8_t> loadConfigData;
  
     // Check whether we need a 32 or 32+ optional header.
     if(nt->OptionalMagic == NT_OPTIONAL_64_MAGIC){
-	optional_header_64 *optionalHeader = &(nt->OptionalHeader);
+	peparse::optional_header_64 *optionalHeader = &(nt->OptionalHeader);
     	dllCharacteristics_ = optionalHeader->DllCharacteristics;
-	if(optionalHeader->NumberOfRvaAndSizes < DIR_COM_DESCRIPTOR + 1){
+	if(optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1){
 	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
 	    return;
 	}
-    	clrConfig_ = optionalHeader.DataDirectory[DIR_COM_DESCRIPTOR];
+    	clrConfig_ = optionalHeader.DataDirectory[peparse::DIR_COM_DESCRIPTOR];
+    	
+	// Warn and return early if the image data directory vector
+	// is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
+    	if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
+		cerr << "Warn: short image data directory vector (no load config?)" << "\n";
+		return;
+	}
+
+	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
+		cerr << "Warn: No load config in the PE" << "\n";
+   	}
+
+    	memcpy_s(&loadConfig64_, sizeof(loadConfig64_), loadConfigData.data(), loadConfigData.size());
     } else {
-	optional_header_32 *optionalHeader = &(nt->OptionalHeader64);
+	peparse::optional_header_32 *optionalHeader = &(nt->OptionalHeader64);
 	dllCharacteristics_ = optionalHeader->DllCharacteristics;
-	if(optionalHeader->NumberOfRvaAndSizes < DIR_COM_DESCRIPTOR + 1){
+	if(optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1){
 	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
 	    return;
 	}
-    	clrConfig_ = optionalHeader.DataDirectory[DIR_COM_DESCRIPTOR];
-    }
+    	clrConfig_ = optionalHeader.DataDirectory[peparse::DIR_COM_DESCRIPTOR];
+	// Warn and return early if the image data directory vector
+	// is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
+    	if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
+		cerr << "Warn: short image data directory vector (no load config?)" << "\n";
+		return;
+	}
 
-    // Warn and return early if the image data directory vector
-    // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
-    /*
-    if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
-        cerr << "Warn: short image data directory vector (no load config?)" << "\n";
-        return;
-    }
-    */
+	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
+		cerr << "Warn: No load config in the PE" << "\n";
+   	}
 
-    /*
-    ULONG loadConfigDirectoryEntrySize = 0u;
-    const PVOID loadConfigDirectoryEntryData = ImageDirectoryEntryToDataEx(
-            loadedImage.MappedAddress,
-            FALSE,
-            IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
-            &loadConfigDirectoryEntrySize,
-            0);
-    if (loadConfigDirectoryEntryData == 0) {
-        cerr << "Warn: No IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG in the PE" << "\n";
-        return;
+    	memcpy_s(&loadConfig32_, sizeof(loadConfig32_), loadConfigData.data(), loadConfigData.size());
     }
-
-    memcpy_s(&loadConfig_, sizeof(loadConfig_), loadConfigDirectoryEntryData, loadConfigDirectoryEntrySize);
-    */
 }
 
 json Checksec::toJson() const
