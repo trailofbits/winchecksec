@@ -20,12 +20,12 @@ using json = nlohmann::json;
 namespace checksec {
 
 
-class LoadedImage : public peparse::parsed_pe
+class LoadedImage
 {
 public:
     explicit LoadedImage(const std::string path)
     {
-        if (!peparse::ParsePEFromFile(path.c_str())) {
+        if (!(pe_ = peparse::ParsePEFromFile(path.c_str()))) {
             throw ChecksecError("Couldn't load file; corrupt or not a PE?");
         }
     }
@@ -38,12 +38,13 @@ public:
     LoadedImage(const LoadedImage&) = delete;
     LoadedImage& operator=(const LoadedImage&) = delete;
 
-private:
-
 	peparse::parsed_pe *get()
     {
-        return &(*this);
+        return pe_;
     }
+
+private:
+	peparse::parsed_pe *pe_;
 };
 
 
@@ -52,7 +53,7 @@ Checksec::Checksec(string filepath)
 {
     LoadedImage loadedImage{filepath};
 
-    peparse::nt_header_32 nt = loadedImage.peHeader.nt;
+    peparse::nt_header_32 nt = loadedImage.get()->peHeader.nt;
     peparse::file_header *imageFileHeader = &(nt.FileHeader);
     
     imageCharacteristics_ = imageFileHeader->Characteristics;
@@ -75,9 +76,9 @@ Checksec::Checksec(string filepath)
 		return;
 	}
 
-	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
+	if(!peparse::GetDataDirectoryEntry(loadedImage.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)){
 		cerr << "Warn: No load config in the PE" << "\n";
-		cerr << "Warn: 64" << peparse::GetPEErrString() << "\n"; 
+		return;
    	}
 	peparse::image_load_config_64 loadConfig;
     	memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(), loadConfigData.size());
@@ -101,10 +102,9 @@ Checksec::Checksec(string filepath)
 		return;
 	}
 
-	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
+	if(!peparse::GetDataDirectoryEntry(loadedImage.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)){
 		cerr << "Warn: No load config in the PE" << "\n";
-		cerr << "Warn: 32 " << peparse::GetPEErrString() << "\n"; 
-		cerr << "Warn: 32 " << nt.OptionalMagic << "\n";
+		return;
    	}
 	peparse::image_load_config_32 loadConfig;
     	memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(), loadConfigData.size());
