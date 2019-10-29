@@ -59,7 +59,7 @@ Checksec::Checksec(string filepath) : filepath_(filepath) {
     clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
 
     // Warn and return early if the image data directory vector
-    // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
+    // is too short to contain a reference to the DIR_LOAD_CONFIG.
     if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
       cerr << "Warn: short image data directory vector (no load config?)"
            << "\n";
@@ -90,7 +90,7 @@ Checksec::Checksec(string filepath) : filepath_(filepath) {
     }
     clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
     // Warn and return early if the image data directory vector
-    // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
+    // is too short to contain a reference to the DIR_LOAD_CONFIG.
     if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
       cerr << "Warn: short image data directory vector (no load config?)"
            << "\n";
