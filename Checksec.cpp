@@ -1,11 +1,14 @@
 #include <windows.h>
-#include <winnt.h>
-#include <wincrypt.h>
 #include <softpub.h>
-#include <imagehlp.h>
+#include <wincrypt.h>
+#include <winnt.h>
 
-#include <ostream>
+#define _PEPARSE_WINDOWS_CONFLICTS
+#include <parser-library/parse.h>
+
 #include <codecvt>
+#include <ostream>
+#include <vector>
 
 #include "Checksec.h"
 
@@ -16,246 +19,261 @@ using json = nlohmann::json;
 
 namespace checksec {
 
-
-// RAII wrapper for LOADED_IMAGE
-class LoadedImage : public LOADED_IMAGE
-{
+class LoadedImage {
 public:
-    explicit LoadedImage(const std::string path)
-    {
-        if (!MapAndLoad(path.c_str(), NULL, get(), true, true)) {
-            throw ChecksecError("Couldn't load file; corrupt or not a PE?");
-        }
+  explicit LoadedImage(const std::string path) {
+    if (!(pe_ = peparse::ParsePEFromFile(path.c_str()))) {
+      throw ChecksecError("Couldn't load file; corrupt or not a PE?");
     }
-    ~LoadedImage()
-    {
-        UnMapAndLoad(get());
-    }
+  }
+  ~LoadedImage() { peparse::DestructParsedPE(pe_); }
 
-    // can't make copies of LoadedImage
-    LoadedImage(const LoadedImage&) = delete;
-    LoadedImage& operator=(const LoadedImage&) = delete;
+  // can't make copies of LoadedImage
+  LoadedImage(const LoadedImage &) = delete;
+  LoadedImage &operator=(const LoadedImage &) = delete;
+
+  peparse::parsed_pe *operator&() { return pe_; }
 
 private:
-
-    LOADED_IMAGE *get()
-    {
-        return &(*this);
-    }
+  peparse::parsed_pe *pe_;
 };
 
+Checksec::Checksec(string filepath) : filepath_(filepath) {
+  LoadedImage loadedImage{filepath};
 
+  peparse::nt_header_32 nt = (&loadedImage)->peHeader.nt;
+  peparse::file_header *imageFileHeader = &(nt.FileHeader);
 
-Checksec::Checksec(string filepath)
-: filepath_(filepath)
-{
-    LoadedImage loadedImage{filepath};
+  imageCharacteristics_ = imageFileHeader->Characteristics;
+  std::vector<std::uint8_t> loadConfigData;
 
-
-    IMAGE_FILE_HEADER imageFileHeader = loadedImage.FileHeader->FileHeader;
-    IMAGE_OPTIONAL_HEADER imageOptionalHeader = loadedImage.FileHeader->OptionalHeader;
-
-    imageCharacteristics_ = imageFileHeader.Characteristics;
-    dllCharacteristics_ = imageOptionalHeader.DllCharacteristics;
-
-    if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR + 1) {
-        cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
-        return;
+  // Check whether we need a 32 or 32+ optional header.
+  if (nt.OptionalMagic == peparse::NT_OPTIONAL_64_MAGIC) {
+    peparse::optional_header_64 *optionalHeader = &(nt.OptionalHeader64);
+    dllCharacteristics_ = optionalHeader->DllCharacteristics;
+    if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1) {
+      cerr << "Warn: short image data directory vector (no CLR info?)"
+           << "\n";
+      return;
     }
-
-    clrConfig_ = imageOptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
+    clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
 
     // Warn and return early if the image data directory vector
-    // is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
-    if (imageOptionalHeader.NumberOfRvaAndSizes < IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG + 1) {
-        cerr << "Warn: short image data directory vector (no load config?)" << "\n";
-        return;
+    // is too short to contain a reference to the DIR_LOAD_CONFIG.
+    if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
+      cerr << "Warn: short image data directory vector (no load config?)"
+           << "\n";
+      return;
     }
 
-    ULONG loadConfigDirectoryEntrySize = 0u;
-    const PVOID loadConfigDirectoryEntryData = ImageDirectoryEntryToDataEx(
-            loadedImage.MappedAddress,
-            FALSE,
-            IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG,
-            &loadConfigDirectoryEntrySize,
-            0);
-    if (loadConfigDirectoryEntryData == 0) {
-        cerr << "Warn: No IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG in the PE" << "\n";
-        return;
+    if (!peparse::GetDataDirectoryEntry(
+            (&loadedImage), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+      cerr << "Warn: No load config in the PE"
+           << "\n";
+      return;
+    }
+    peparse::image_load_config_64 loadConfig;
+    memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(),
+             loadConfigData.size());
+    loadConfigSize_ = loadConfig.Size;
+    loadConfigGuardFlags_ = loadConfig.GuardFlags;
+    loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
+    loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
+    loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
+  } else {
+    peparse::optional_header_32 *optionalHeader = &(nt.OptionalHeader);
+    dllCharacteristics_ = optionalHeader->DllCharacteristics;
+    if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1) {
+      cerr << "Warn: short image data directory vector (no CLR info?)"
+           << "\n";
+      return;
+    }
+    clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
+    // Warn and return early if the image data directory vector
+    // is too short to contain a reference to the DIR_LOAD_CONFIG.
+    if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
+      cerr << "Warn: short image data directory vector (no load config?)"
+           << "\n";
+      return;
     }
 
-    memcpy_s(&loadConfig_, sizeof(loadConfig_), loadConfigDirectoryEntryData, loadConfigDirectoryEntrySize);
-}
-
-json Checksec::toJson() const
-{
-    return this->operator json();
-}
-
-Checksec::operator json() const
-{
-    return json {
-        { "dynamicBase",    isDynamicBase() },
-        { "aslr",           isASLR() },
-        { "highEntropyVA",  isHighEntropyVA() },
-        { "forceIntegrity", isForceIntegrity() },
-        { "isolation",      isIsolation() },
-        { "nx",             isNX() },
-        { "seh",            isSEH() },
-        { "cfg",            isCFG() },
-        { "rfg",            isRFG() },
-        { "safeSEH",        isSafeSEH() },
-        { "gs",             isGS() },
-        { "authenticode",   isAuthenticode() },
-        { "dotNET",         isDotNET() },
-        { "path",           filepath_ },
-    };
-}
-
-const bool Checksec::isDynamicBase() const
-{
-    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE);
-}
-
-const bool Checksec::isASLR() const
-{
-    // A binary is ASLR'd if:
-    // * It was linked with /DYNAMICBASE and has *not* had its relocation entries stripped, or
-    // * It's managed by the CLR, which is always ASLR'd.
-    return (!(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) && isDynamicBase()) ||
-        isDotNET();
-}
-
-const bool Checksec::isHighEntropyVA() const
-{
-    // NOTE(ww): Set by /HIGHENTROPYVA, but not exposed anywhere as a constant.
-    // Only relevant on 64-bit machines with 64-bit images.
-    // NOTE(ww): Additionally, don't count a binary as high-entropy capable
-    // if it isn't also ASLR'd.
-    return (dllCharacteristics_ & 0x20) && isASLR();
-}
-
-const bool Checksec::isForceIntegrity() const
-{
-    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY);
-}
-
-const bool Checksec::isNX() const
-{
-    return (dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT) || isDotNET();
-}
-
-const bool Checksec::isIsolation() const
-{
-    return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_ISOLATION);
-}
-
-const bool Checksec::isSEH() const
-{
-    return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_SEH);
-}
-
-const bool Checksec::isCFG() const
-{
-    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF);
-}
-
-const bool Checksec::isAuthenticode() const
-{
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring filePathW = converter.from_bytes(filepath_);
-
-    WINTRUST_FILE_INFO fileInfo = {
-        sizeof(fileInfo),    /* cbStruct */
-        filePathW.c_str(),   /* pcwszFilePath */
-        NULL,                /* hFile */
-        NULL,                /* pgKnownSubject */
-    };
-
-    GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-
-    WINTRUST_DATA trustData = {
-        sizeof(trustData),        /* cbStruct */
-        NULL,                     /* pPolicyCallbackData */
-        NULL,                     /* pSIPClientData */
-        WTD_UI_NONE,              /* dwUIChoice */
-        WTD_REVOKE_NONE,          /* fdwRevocationChecks */
-        WTD_CHOICE_FILE,          /* dwUnionChoice */
-        &fileInfo,                /* pFile */
-        WTD_STATEACTION_VERIFY,   /* dwStateAction */
-        NULL,                     /* hWVTStateData */
-        NULL,                     /* pwszURLReference */
-        0,                        /* dwProvFlags */
-        0,                        /* dwUIContext */
-        NULL,                     /* pSignatureSettings */
-    };
-
-    uint32_t status = WinVerifyTrust(NULL, &policyGUID, &trustData);
-
-    trustData.dwStateAction = WTD_STATEACTION_CLOSE;
-
-    WinVerifyTrust(NULL, &policyGUID, &trustData);
-
-    return status == ERROR_SUCCESS;
-}
-
-const bool Checksec::isRFG() const
-{
-    // NOTE(ww): a load config under 148 bytes implies the absence of the GuardFlags field.
-    if (loadConfig_.Size < 148) {
-        cerr << "Warn: no or short load config, assuming no RFG" << "\n";
-        return false;
+    if (!peparse::GetDataDirectoryEntry(
+            (&loadedImage), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+      cerr << "Warn: No load config in the PE"
+           << "\n";
+      return;
     }
-
-    // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
-    return (loadConfig_.GuardFlags & 0x00020000)
-        && (loadConfig_.GuardFlags & 0x00040000 || loadConfig_.GuardFlags & 0x00080000);
+    peparse::image_load_config_32 loadConfig;
+    memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(),
+             loadConfigData.size());
+    loadConfigSize_ = loadConfig.Size;
+    loadConfigGuardFlags_ = loadConfig.GuardFlags;
+    loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
+    loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
+    loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
+  }
 }
 
-const bool Checksec::isSafeSEH() const
-{
-    // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH fields.
-    if (loadConfig_.Size < 112) {
-        cerr << "Warn: no or short load config, assuming no SafeSEH" << "\n";
-        return false;
-    }
+json Checksec::toJson() const { return this->operator json(); }
 
-    return isSEH() && loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
+Checksec::operator json() const {
+  return json{
+      {"dynamicBase", isDynamicBase()},
+      {"aslr", isASLR()},
+      {"highEntropyVA", isHighEntropyVA()},
+      {"forceIntegrity", isForceIntegrity()},
+      {"isolation", isIsolation()},
+      {"nx", isNX()},
+      {"seh", isSEH()},
+      {"cfg", isCFG()},
+      {"rfg", isRFG()},
+      {"safeSEH", isSafeSEH()},
+      {"gs", isGS()},
+      {"authenticode", isAuthenticode()},
+      {"dotNET", isDotNET()},
+      {"path", filepath_},
+  };
 }
 
-const bool Checksec::isGS() const
-{
-    // NOTE(ww): a load config under 96 bytes implies the absence of the SecurityCookie field.
-    if (loadConfig_.Size < 96) {
-        cerr << "Warn: no or short load config, assuming no GS" << "\n";
-        return false;
-    }
-
-    return loadConfig_.SecurityCookie != 0;
+const bool Checksec::isDynamicBase() const {
+  return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE);
 }
 
-const bool Checksec::isDotNET() const
-{
-    return clrConfig_.VirtualAddress != 0;
+const bool Checksec::isASLR() const {
+  // A binary is ASLR'd if:
+  // * It was linked with /DYNAMICBASE and has *not* had its relocation entries
+  // stripped, or
+  // * It's managed by the CLR, which is always ASLR'd.
+  return (!(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) &&
+          isDynamicBase()) ||
+         isDotNET();
 }
 
-ostream& operator<<(ostream& os, Checksec& self)
-{
-    json j = self.operator json();
-    os << "Dynamic Base    : " << j["dynamicBase"] << "\n";
-    os << "ASLR            : " << j["aslr"] << "\n";
-    os << "High Entropy VA : " << j["highEntropyVA"] << "\n";
-    os << "Force Integrity : " << j["forceIntegrity"] << "\n";
-    os << "Isolation       : " << j["isolation"] << "\n";
-    os << "NX              : " << j["nx"] << "\n";
-    os << "SEH             : " << j["seh"] << "\n";
-    os << "CFG             : " << j["cfg"] << "\n";
-    os << "RFG             : " << j["rfg"] << "\n";
-    os << "SafeSEH         : " << j["safeSEH"] << "\n";
-    os << "GS              : " << j["gs"] << "\n";
-    os << "Authenticode    : " << j["authenticode"] << "\n";
-    os << ".NET            : " << j["dotNET"] << "\n";
-    return os;
+const bool Checksec::isHighEntropyVA() const {
+  // NOTE(ww): Set by /HIGHENTROPYVA, but not exposed anywhere as a constant.
+  // Only relevant on 64-bit machines with 64-bit images.
+  // NOTE(ww): Additionally, don't count a binary as high-entropy capable
+  // if it isn't also ASLR'd.
+  return (dllCharacteristics_ & 0x20) && isASLR();
 }
 
-} // namespace
+const bool Checksec::isForceIntegrity() const {
+  return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY);
+}
+
+const bool Checksec::isNX() const {
+  return (dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT) ||
+         isDotNET();
+}
+
+const bool Checksec::isIsolation() const {
+  return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_ISOLATION);
+}
+
+const bool Checksec::isSEH() const {
+  return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_SEH);
+}
+
+const bool Checksec::isCFG() const {
+  return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF);
+}
+
+const bool Checksec::isAuthenticode() const {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  std::wstring filePathW = converter.from_bytes(filepath_);
+
+  WINTRUST_FILE_INFO fileInfo = {
+      sizeof(fileInfo),  /* cbStruct */
+      filePathW.c_str(), /* pcwszFilePath */
+      NULL,              /* hFile */
+      NULL,              /* pgKnownSubject */
+  };
+
+  GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+  WINTRUST_DATA trustData = {
+      sizeof(trustData),      /* cbStruct */
+      NULL,                   /* pPolicyCallbackData */
+      NULL,                   /* pSIPClientData */
+      WTD_UI_NONE,            /* dwUIChoice */
+      WTD_REVOKE_NONE,        /* fdwRevocationChecks */
+      WTD_CHOICE_FILE,        /* dwUnionChoice */
+      &fileInfo,              /* pFile */
+      WTD_STATEACTION_VERIFY, /* dwStateAction */
+      NULL,                   /* hWVTStateData */
+      NULL,                   /* pwszURLReference */
+      0,                      /* dwProvFlags */
+      0,                      /* dwUIContext */
+      NULL,                   /* pSignatureSettings */
+  };
+
+  uint32_t status = WinVerifyTrust(NULL, &policyGUID, &trustData);
+
+  trustData.dwStateAction = WTD_STATEACTION_CLOSE;
+
+  WinVerifyTrust(NULL, &policyGUID, &trustData);
+
+  return status == ERROR_SUCCESS;
+}
+
+const bool Checksec::isRFG() const {
+  // NOTE(ww): a load config under 148 bytes implies the absence of the
+  // GuardFlags field.
+  if (loadConfigSize_ < 148) {
+    cerr << "Warn: no or short load config, assuming no RFG"
+         << "\n";
+    return false;
+  }
+
+  // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
+  return (loadConfigGuardFlags_ & 0x00020000) &&
+         (loadConfigGuardFlags_ & 0x00040000 ||
+          loadConfigGuardFlags_ & 0x00080000);
+}
+
+const bool Checksec::isSafeSEH() const {
+  // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH
+  // fields.
+  if (loadConfigSize_ < 112) {
+    cerr << "Warn: no or short load config, assuming no SafeSEH"
+         << "\n";
+    return false;
+  }
+
+  return isSEH() && loadConfigSEHandlerTable_ != 0 &&
+         loadConfigSEHandlerCount_ != 0;
+}
+
+const bool Checksec::isGS() const {
+  // NOTE(ww): a load config under 96 bytes implies the absence of the
+  // SecurityCookie field.
+  if (loadConfigSize_ < 96) {
+    cerr << "Warn: no or short load config, assuming no GS"
+         << "\n";
+    return false;
+  }
+
+  return loadConfigSecurityCookie_ != 0;
+}
+
+const bool Checksec::isDotNET() const { return clrConfig_.VirtualAddress != 0; }
+
+ostream &operator<<(ostream &os, Checksec &self) {
+  json j = self.operator json();
+  os << "Dynamic Base    : " << j["dynamicBase"] << "\n";
+  os << "ASLR            : " << j["aslr"] << "\n";
+  os << "High Entropy VA : " << j["highEntropyVA"] << "\n";
+  os << "Force Integrity : " << j["forceIntegrity"] << "\n";
+  os << "Isolation       : " << j["isolation"] << "\n";
+  os << "NX              : " << j["nx"] << "\n";
+  os << "SEH             : " << j["seh"] << "\n";
+  os << "CFG             : " << j["cfg"] << "\n";
+  os << "RFG             : " << j["rfg"] << "\n";
+  os << "SafeSEH         : " << j["safeSEH"] << "\n";
+  os << "GS              : " << j["gs"] << "\n";
+  os << "Authenticode    : " << j["authenticode"] << "\n";
+  os << ".NET            : " << j["dotNET"] << "\n";
+  return os;
+}
+
+} // namespace checksec
