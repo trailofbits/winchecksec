@@ -21,11 +21,13 @@ The following security features are currently detected:
 
 ## Building
 
-`winchecksec` has no dependencies other than Windows itself, and should build
+`winchecksec` depends on pe-parse, and should build
 with any reasonably modern `cmake`. It'll audit binaries of any architecture,
 but you should build it as 64-bit:
 
 ```cmd
+> git clone --recurse -submodules https://github.com/trailofbits/winchecksec.git
+> cd winchecksec
 > mkdir build
 > cd build
 > cmake -G "Visual Studio 15 2017 Win64" ..
