@@ -60,9 +60,12 @@ private:
     string                      filepath_;
     uint16_t                    imageCharacteristics_ = 0;
     uint16_t                    dllCharacteristics_ = 0;
-    data_directory        clrConfig_ = {0};
-    peparse::image_load_config_32 loadConfig32_ = {0};
-    peparse::image_load_config_64 loadConfig64_ = {0};
+    uint32_t			loadConfigSize_ = 0;
+    uint32_t 			loadConfigGuardFlags_ = 0;
+    uint64_t 			loadConfigSEHandlerTable_ = 0;
+    uint64_t			loadConfigSEHandlerCount_ = 0;
+    uint64_t			loadConfigSecurityCookie_ = 0;
+    peparse::data_directory        clrConfig_ = {0};
 };
 
 } // namespace

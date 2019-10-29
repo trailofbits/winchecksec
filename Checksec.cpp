@@ -25,13 +25,13 @@ class LoadedImage : public peparse::parsed_pe
 public:
     explicit LoadedImage(const std::string path)
     {
-        if (!peparse::ParsePEFromFile(path.c_str()) {
+        if (!peparse::ParsePEFromFile(path.c_str())) {
             throw ChecksecError("Couldn't load file; corrupt or not a PE?");
         }
     }
     ~LoadedImage()
     {
-    	peparse::DestructParsedPe(get());
+    	peparse::DestructParsedPE(get());
     }
 
     // can't make copies of LoadedImage
@@ -55,18 +55,18 @@ Checksec::Checksec(string filepath)
     peparse::nt_header_32 *nt = &(loadedImage.peHeader.nt);
     peparse::file_header *imageFileHeader = &(nt->FileHeader);
     
-    imageCharacteristics_ = imageFileHeader.Characteristics;
+    imageCharacteristics_ = imageFileHeader->Characteristics;
     std::vector<std::uint8_t> loadConfigData;
  
     // Check whether we need a 32 or 32+ optional header.
-    if(nt->OptionalMagic == NT_OPTIONAL_64_MAGIC){
-	peparse::optional_header_64 *optionalHeader = &(nt->OptionalHeader);
+    if(nt->OptionalMagic == peparse::NT_OPTIONAL_64_MAGIC){
+	peparse::optional_header_64 *optionalHeader = &(nt->OptionalHeader64);
     	dllCharacteristics_ = optionalHeader->DllCharacteristics;
 	if(optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1){
 	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
 	    return;
 	}
-    	clrConfig_ = optionalHeader.DataDirectory[peparse::DIR_COM_DESCRIPTOR];
+    	clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
     	
 	// Warn and return early if the image data directory vector
 	// is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
@@ -78,16 +78,21 @@ Checksec::Checksec(string filepath)
 	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
 		cerr << "Warn: No load config in the PE" << "\n";
    	}
-
-    	memcpy_s(&loadConfig64_, sizeof(loadConfig64_), loadConfigData.data(), loadConfigData.size());
+	peparse::image_load_config_64 loadConfig;
+    	memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(), loadConfigData.size());
+        loadConfigSize_ = loadConfig.Size;
+	loadConfigGuardFlags_ = loadConfig.GuardFlags;
+	loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
+	loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
+	loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
     } else {
-	peparse::optional_header_32 *optionalHeader = &(nt->OptionalHeader64);
+	peparse::optional_header_32 *optionalHeader = &(nt->OptionalHeader);
 	dllCharacteristics_ = optionalHeader->DllCharacteristics;
 	if(optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1){
 	    cerr << "Warn: short image data directory vector (no CLR info?)" << "\n";
 	    return;
 	}
-    	clrConfig_ = optionalHeader.DataDirectory[peparse::DIR_COM_DESCRIPTOR];
+    	clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
 	// Warn and return early if the image data directory vector
 	// is too short to contain a reference to the IMAGE_LOAD_CONFIG_DIRECTORY.
     	if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
@@ -98,8 +103,13 @@ Checksec::Checksec(string filepath)
 	if(!peparse::GetDataDirectoryEntry(&loadedImage, peparse::DIR_LOAD_CONFIG, loadConfigData)){
 		cerr << "Warn: No load config in the PE" << "\n";
    	}
-
-    	memcpy_s(&loadConfig32_, sizeof(loadConfig32_), loadConfigData.data(), loadConfigData.size());
+	peparse::image_load_config_32 loadConfig;
+    	memcpy_s(&loadConfig, sizeof(loadConfig), loadConfigData.data(), loadConfigData.size());
+	loadConfigSize_ = loadConfig.Size;
+	loadConfigGuardFlags_ = loadConfig.GuardFlags;
+	loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
+	loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
+	loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
     }
 }
 
@@ -218,36 +228,36 @@ const bool Checksec::isAuthenticode() const
 const bool Checksec::isRFG() const
 {
     // NOTE(ww): a load config under 148 bytes implies the absence of the GuardFlags field.
-    if (loadConfig_.Size < 148) {
+    if (loadConfigSize_ < 148) {
         cerr << "Warn: no or short load config, assuming no RFG" << "\n";
         return false;
     }
 
     // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
-    return (loadConfig_.GuardFlags & 0x00020000)
-        && (loadConfig_.GuardFlags & 0x00040000 || loadConfig_.GuardFlags & 0x00080000);
+    return (loadConfigGuardFlags_ & 0x00020000)
+        && (loadConfigGuardFlags_ & 0x00040000 || loadConfigGuardFlags_ & 0x00080000);
 }
 
 const bool Checksec::isSafeSEH() const
 {
     // NOTE(ww): a load config under 112 bytes implies the absence of the SafeSEH fields.
-    if (loadConfig_.Size < 112) {
+    if (loadConfigSize_ < 112) {
         cerr << "Warn: no or short load config, assuming no SafeSEH" << "\n";
         return false;
     }
 
-    return isSEH() && loadConfig_.SEHandlerTable != 0 && loadConfig_.SEHandlerCount != 0;
+    return isSEH() && loadConfigSEHandlerTable_ != 0 && loadConfigSEHandlerCount_ != 0;
 }
 
 const bool Checksec::isGS() const
 {
     // NOTE(ww): a load config under 96 bytes implies the absence of the SecurityCookie field.
-    if (loadConfig_.Size < 96) {
+    if (loadConfigSize_ < 96) {
         cerr << "Warn: no or short load config, assuming no GS" << "\n";
         return false;
     }
 
-    return loadConfig_.SecurityCookie != 0;
+    return loadConfigSecurityCookie_ != 0;
 }
 
 const bool Checksec::isDotNET() const

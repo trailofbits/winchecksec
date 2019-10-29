@@ -4,9 +4,9 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "Winchecksec should be built as a 64-bit binary.")
 endif(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
 
-add_subdirectory(pe-parse)
+#add_subdirectory(pe-parse)
 include_directories(pe-parse/pe-parser-library/include)
-link_directories(build/pe-parse/pe-parser-library/${CMAKE_BUILD_TYPE})
+link_directories(pe-parse/build/pe-parser-library/${CMAKE_BUILD_TYPE})
 
 add_library(winchecksec SHARED Checksec.cpp Checksec.h)
 target_compile_definitions(winchecksec PRIVATE _WINCHECKSEC_EXPORT=1)
