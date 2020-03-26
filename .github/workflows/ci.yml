@@ -11,13 +11,16 @@ on:
 
 jobs:
   tests:
+    strategy:
+      matrix:
+        architecture: ["x64", "Win32"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Run Tests
+    - name: build
       run: |
         git submodule update --init
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A x64 ..
+        cmake -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} ..
         cmake --build .
