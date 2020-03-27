@@ -1,16 +1,5 @@
-#ifdef __linux__
-#include "windows-deps.h"
-#else
-#include <windows.h>
-#include <softpub.h>
-#include <wincrypt.h>
-#include <winnt.h>
-#endif
-
-#define _PEPARSE_WINDOWS_CONFLICTS
 #include <parser-library/parse.h>
 
-#include <codecvt>
 #include <ostream>
 #include <vector>
 
@@ -148,7 +137,8 @@ Checksec::operator json() const {
 }
 
 const bool Checksec::isDynamicBase() const {
-    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE);
+    return !!(dllCharacteristics_ &
+              peparse::IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE);
 }
 
 const bool Checksec::isASLR() const {
@@ -156,7 +146,7 @@ const bool Checksec::isASLR() const {
     // * It was linked with /DYNAMICBASE and has *not* had its relocation
     // entries stripped, or
     // * It's managed by the CLR, which is always ASLR'd.
-    return (!(imageCharacteristics_ & IMAGE_FILE_RELOCS_STRIPPED) &&
+    return (!(imageCharacteristics_ & peparse::IMAGE_FILE_RELOCS_STRIPPED) &&
             isDynamicBase()) ||
            isDotNET();
 }
@@ -170,66 +160,28 @@ const bool Checksec::isHighEntropyVA() const {
 }
 
 const bool Checksec::isForceIntegrity() const {
-    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY);
+    return !!(dllCharacteristics_ &
+              peparse::IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY);
 }
 
 const bool Checksec::isNX() const {
-    return (dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NX_COMPAT) ||
+    return (dllCharacteristics_ &
+            peparse::IMAGE_DLLCHARACTERISTICS_NX_COMPAT) ||
            isDotNET();
 }
 
 const bool Checksec::isIsolation() const {
-    return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_ISOLATION);
+    return !(dllCharacteristics_ &
+             peparse::IMAGE_DLLCHARACTERISTICS_NO_ISOLATION);
 }
 
 const bool Checksec::isSEH() const {
-    return !(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_NO_SEH);
+    return !(dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_NO_SEH);
 }
 
 const bool Checksec::isCFG() const {
-    return !!(dllCharacteristics_ & IMAGE_DLLCHARACTERISTICS_GUARD_CF);
+    return !!(dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_GUARD_CF);
 }
-
-#ifdef _WIN32
-const bool Checksec::isAuthenticode() const {
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    std::wstring filePathW = converter.from_bytes(filepath_);
-
-    WINTRUST_FILE_INFO fileInfo = {
-        sizeof(fileInfo),  /* cbStruct */
-        filePathW.c_str(), /* pcwszFilePath */
-        NULL,              /* hFile */
-        NULL,              /* pgKnownSubject */
-    };
-
-    GUID policyGUID = WINTRUST_ACTION_GENERIC_VERIFY_V2;
-
-    WINTRUST_DATA trustData = {
-        sizeof(trustData),      /* cbStruct */
-        NULL,                   /* pPolicyCallbackData */
-        NULL,                   /* pSIPClientData */
-        WTD_UI_NONE,            /* dwUIChoice */
-        WTD_REVOKE_NONE,        /* fdwRevocationChecks */
-        WTD_CHOICE_FILE,        /* dwUnionChoice */
-        &fileInfo,              /* pFile */
-        WTD_STATEACTION_VERIFY, /* dwStateAction */
-        NULL,                   /* hWVTStateData */
-        NULL,                   /* pwszURLReference */
-        0,                      /* dwProvFlags */
-        0,                      /* dwUIContext */
-        NULL,                   /* pSignatureSettings */
-    };
-
-    uint32_t status = WinVerifyTrust(NULL, &policyGUID, &trustData);
-
-    trustData.dwStateAction = WTD_STATEACTION_CLOSE;
-
-    WinVerifyTrust(NULL, &policyGUID, &trustData);
-
-    return status == ERROR_SUCCESS;
-}
-
-#endif
 
 const bool Checksec::isRFG() const {
     // NOTE(ww): a load config under 148 bytes implies the absence of the
