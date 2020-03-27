@@ -21,7 +21,7 @@
 #define _PEPARSE_WINDOWS_CONFLICTS
 #include <parser-library/parse.h>
 
-#include "json.hpp"
+#include "vendor/json.hpp"
 using json = nlohmann::json;
 
 using namespace std;

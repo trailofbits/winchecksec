@@ -41,7 +41,7 @@ $ ./build/winchecksec
 > cd winchecksec
 > mkdir build
 > cd build
-> cmake  ..
+> cmake ..
 > cmake --build . --config Release
 > .\Release\winchecksec.exe C:\Windows\notepad.exe
 ```

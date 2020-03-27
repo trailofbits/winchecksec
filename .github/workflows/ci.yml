@@ -10,17 +10,37 @@ on:
     - cron:  '0 12 * * *'
 
 jobs:
-  tests:
+  linux:
+    strategy:
+      matrix:
+        build-type: ["Debug", "Release"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: lint
+        run: make lint
+      - name: build
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} ..
+          cmake --build .
+  windows:
     strategy:
       matrix:
         architecture: ["x64", "Win32"]
+        build-type: ["Debug", "Release"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: true
     - name: build
       run: |
-        git submodule update --init
         mkdir build
         cd build
         cmake -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} ..
-        cmake --build .
+        cmake --build . --config ${{ matrix.build-type }}
+

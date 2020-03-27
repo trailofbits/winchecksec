@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#include "json.hpp"
+#include "vendor/json.hpp"
 using json = nlohmann::json;
 
 namespace checksec {
@@ -80,7 +80,8 @@ Checksec::Checksec(string filepath) : filepath_(filepath) {
         }
         peparse::image_load_config_64 loadConfig;
         if (loadConfigData.size() > sizeof(loadConfig)) {
-            cerr << "Warn: large load config, probably contains undocumented fields"
+            cerr << "Warn: large load config, probably contains undocumented "
+                    "fields"
                  << "\n";
         }
         memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
@@ -116,7 +117,8 @@ Checksec::Checksec(string filepath) : filepath_(filepath) {
         }
         peparse::image_load_config_32 loadConfig;
         if (loadConfigData.size() > sizeof(loadConfig)) {
-            cerr << "Warn: large load config, probably contains undocumented fields"
+            cerr << "Warn: large load config, probably contains undocumented "
+                    "fields"
                  << "\n";
         }
         memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
