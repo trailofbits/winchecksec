@@ -30,7 +30,7 @@ but you should build it as 64-bit:
 > cd winchecksec
 > mkdir build
 > cd build
-> cmake -G "Visual Studio 15 2017 Win64" ..
+> cmake  ..
 > cmake --build . --config Release
 > .\Release\winchecksec.exe C:\Windows\notepad.exe
 ```
