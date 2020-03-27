@@ -1,24 +1,24 @@
 #pragma once
 
-#ifdef __linux__
-#include "windows-deps.h"
+// clang-format off
+#ifdef _WIN32
+    #ifdef _WINCHECKSEC_STANDALONE
+        #define EXPORT
+    #else
+        #ifdef _WINCHECKSEC_EXPORT
+          #define EXPORT __declspec(dllexport)
+        #else
+          #define EXPORT __declspec(dllimport)
+        #endif
+    #endif
 #else
-#ifdef _WINCHECKSEC_STANDALONE
-#define EXPORT
-#else
-#ifdef _WINCHECKSEC_EXPORT
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT __declspec(dllimport)
+    #define EXPORT
 #endif
-#endif
-#include <Windows.h>
-#endif
+// clang-format on
 
 #include <iostream>
 #include <string>
 
-#define _PEPARSE_WINDOWS_CONFLICTS
 #include <parser-library/parse.h>
 
 #include "vendor/json.hpp"
@@ -47,7 +47,9 @@ class EXPORT Checksec {
     const bool isIsolation() const;
     const bool isSEH() const;
     const bool isCFG() const;
+#ifdef _WIN32
     const bool isAuthenticode() const;
+#endif
     const bool isRFG() const;
     const bool isSafeSEH() const;
     const bool isGS() const;
