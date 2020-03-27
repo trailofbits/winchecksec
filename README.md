@@ -24,6 +24,18 @@ The following security features are currently detected:
 `winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse), and should build
 with any reasonably modern `cmake`. It'll audit binaries of any architecture.
 
+### Building on Linux
+```bash
+$ git clone --recurse-submodules https://github.com/trailofbits/winchecksec.git
+$ cd winchecksec
+$ mkdir build
+$ cd build
+$ cmake ..
+$ cmake --build . --config Release
+$ ./build/winchecksec
+```
+
+### Building on Windows
 ```cmd
 > git clone --recurse-submodules https://github.com/trailofbits/winchecksec.git
 > cd winchecksec
