@@ -87,10 +87,10 @@ Checksec::Checksec(string filepath)
         }
         peparse::image_load_config_64 loadConfig;
         if (loadConfigData.size() > sizeof(loadConfig)) {
-            throw ChecksecError(
-                "Error: loadConfigData is bigger than loadConfig.");
+            cerr << "Warn: large load config, probably contains undocumented fields"
+                 << "\n";
         }
-        memcpy(&loadConfig, loadConfigData.data(), loadConfigData.size());
+        memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
         loadConfigSize_ = loadConfig.Size;
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
@@ -121,10 +121,10 @@ Checksec::Checksec(string filepath)
         }
         peparse::image_load_config_32 loadConfig;
         if (loadConfigData.size() > sizeof(loadConfig)) {
-            throw ChecksecError(
-                "Error: loadConfigData is bigger than loadConfig.");
+            cerr << "Warn: large load config, probably contains undocumented fields"
+                 << "\n";
         }
-        memcpy(&loadConfig, loadConfigData.data(), loadConfigData.size());
+        memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
         loadConfigSize_ = loadConfig.Size;
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
