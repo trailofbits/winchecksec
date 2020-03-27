@@ -1,9 +1,9 @@
+#include "Checksec.h"
+
 #include <parser-library/parse.h>
 
 #include <ostream>
 #include <vector>
-
-#include "Checksec.h"
 
 using namespace std;
 

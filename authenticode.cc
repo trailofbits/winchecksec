@@ -1,3 +1,5 @@
+#include "Checksec.h"
+
 #include <windows.h>
 #include <softpub.h>
 #include <wincrypt.h>
