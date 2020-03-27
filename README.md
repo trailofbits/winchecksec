@@ -12,7 +12,7 @@ The following security features are currently detected:
     * `/HIGHENTROPYVA` for 64-bit systems
 * Code integrity/signing:
     * `/INTEGRITYCHECK`
-    * Authenticode-signed with a valid (trusted, active) certificate (currently unsupport on Linux)
+    * Authenticode-signed with a valid (trusted, active) certificate (currently unsupported on Linux)
 * DEP (a.k.a. W^X, NX)
 * Manifest isolation via (`/ALLOWISOLATION`)
 * Structured Exception Handling and SafeSEH support
@@ -22,11 +22,10 @@ The following security features are currently detected:
 ## Building
 
 `winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse), and should build
-with any reasonably modern `cmake`. It'll audit binaries of any architecture,
-but you should build it as 64-bit:
+with any reasonably modern `cmake`. It'll audit binaries of any architecture.
 
 ```cmd
-> git clone --recurse -submodules https://github.com/trailofbits/winchecksec.git
+> git clone --recurse-submodules https://github.com/trailofbits/winchecksec.git
 > cd winchecksec
 > mkdir build
 > cd build
