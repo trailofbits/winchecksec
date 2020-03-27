@@ -4,8 +4,7 @@ using namespace std;
 
 static string VERSION = "1.1.2";
 
-void usage(char* argv[])
-{
+void usage(char* argv[]) {
     cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>"
          << "\n";
     cerr << "Example: " << argv[0] << " -j doom2.exe"
@@ -14,13 +13,9 @@ void usage(char* argv[])
          << "\n";
 }
 
-void version()
-{
-    cerr << "Winchecksec version " << VERSION << "\n";
-}
+void version() { cerr << "Winchecksec version " << VERSION << "\n"; }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     if (argc != 2 && argc != 3) {
         cerr << "Unexpected number of arguments"
              << "\n";
@@ -32,25 +27,25 @@ int main(int argc, char* argv[])
     string path;
 
     switch (argc) {
-    case 2:
-        if (string(argv[1]) == "-V") {
-            version();
-            return 0;
-        }
-        path = argv[1];
-        break;
-    case 3:
-        if (string(argv[1]) == "-j") {
-            jsonOutput = true;
-            path = argv[2];
-        } else {
+        case 2:
+            if (string(argv[1]) == "-V") {
+                version();
+                return 0;
+            }
+            path = argv[1];
+            break;
+        case 3:
+            if (string(argv[1]) == "-j") {
+                jsonOutput = true;
+                path = argv[2];
+            } else {
+                usage(argv);
+                return -__LINE__;
+            }
+            break;
+        default:
             usage(argv);
             return -__LINE__;
-        }
-        break;
-    default:
-        usage(argv);
-        return -__LINE__;
     }
 
     try {

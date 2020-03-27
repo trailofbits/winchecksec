@@ -15,7 +15,6 @@
 #include <Windows.h>
 #endif
 
-
 #include <iostream>
 #include <string>
 
@@ -30,15 +29,12 @@ using namespace std;
 namespace checksec {
 
 class EXPORT ChecksecError : public std::runtime_error {
-public:
-    ChecksecError(const char* what)
-        : std::runtime_error(what)
-    {
-    }
+   public:
+    ChecksecError(const char* what) : std::runtime_error(what) {}
 };
 
 class EXPORT Checksec {
-public:
+   public:
     Checksec(string filepath);
 
     json toJson() const;
@@ -60,7 +56,7 @@ public:
     operator json() const;
     friend ostream& operator<<(ostream& os, Checksec&);
 
-private:
+   private:
     string filepath_;
     uint16_t imageCharacteristics_ = 0;
     uint16_t dllCharacteristics_ = 0;
@@ -69,7 +65,7 @@ private:
     uint64_t loadConfigSEHandlerTable_ = 0;
     uint64_t loadConfigSEHandlerCount_ = 0;
     uint64_t loadConfigSecurityCookie_ = 0;
-    peparse::data_directory clrConfig_ = { 0 };
+    peparse::data_directory clrConfig_ = {0};
 };
 
-} // namespace checksec
+}  // namespace checksec
