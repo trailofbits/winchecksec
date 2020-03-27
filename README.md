@@ -12,7 +12,7 @@ The following security features are currently detected:
     * `/HIGHENTROPYVA` for 64-bit systems
 * Code integrity/signing:
     * `/INTEGRITYCHECK`
-    * Authenticode-signed with a valid (trusted, active) certificate (currently unsupport on Linux)
+    * Authenticode-signed with a valid (trusted, active) certificate (currently unsupported on Linux)
 * DEP (a.k.a. W^X, NX)
 * Manifest isolation via (`/ALLOWISOLATION`)
 * Structured Exception Handling and SafeSEH support
