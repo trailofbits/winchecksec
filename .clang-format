@@ -1,4 +1,6 @@
-BaseStyle: WebKit
+BasedOnStyle: Google
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
+SortIncludes: false
+SortUsingDeclarations: false
