@@ -2,7 +2,6 @@
 
 #ifdef __linux__
 #include "windows-deps.h"
-#define EXPORT
 #else
 #ifdef _WINCHECKSEC_STANDALONE
 #define EXPORT
@@ -15,6 +14,7 @@
 #endif
 #include <Windows.h>
 #endif
+
 
 #include <iostream>
 #include <string>

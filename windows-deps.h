@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#define EXPORT
 
 // winnt.h
 typedef void *HANDLE;

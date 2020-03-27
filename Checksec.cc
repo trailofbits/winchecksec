@@ -1,9 +1,9 @@
 #ifdef __linux__
 #include "windows-deps.h"
 #else
+#include <windows.h>
 #include <softpub.h>
 #include <wincrypt.h>
-#include <windows.h>
 #include <winnt.h>
 #endif
 
