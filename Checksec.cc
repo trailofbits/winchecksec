@@ -156,7 +156,9 @@ const bool Checksec::isHighEntropyVA() const {
     // Only relevant on 64-bit machines with 64-bit images.
     // NOTE(ww): Additionally, don't count a binary as high-entropy capable
     // if it isn't also ASLR'd.
-    return (dllCharacteristics_ & 0x20) && isASLR();
+    return (dllCharacteristics_ &
+            peparse::IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA) &&
+           isASLR();
 }
 
 const bool Checksec::isForceIntegrity() const {
