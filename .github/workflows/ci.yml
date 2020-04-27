@@ -42,6 +42,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
             ..
           cmake --build .
+
   winchecksec-windows:
     strategy:
       matrix:
@@ -57,7 +58,7 @@ jobs:
         vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
     - name: deps
       run: |
-        $VCPKG_ROOT/vcpkg install pe-parse
+        $ENV:VCPKG_ROOT\vcpkg install pe-parse
     - name: build
       run: |
         mkdir build
