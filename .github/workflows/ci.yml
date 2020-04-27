@@ -10,25 +10,39 @@ on:
     - cron:  '0 12 * * *'
 
 jobs:
-  linux:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: lint
+        run: make lint
+
+  winchecksec:
     strategy:
       matrix:
         build-type: ["Debug", "Release"]
         platform: ["ubuntu-latest", "macos-latest"]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v2
+      - name: Restore from cache and install vcpkg
+        uses: lukka/run-vcpkg@v2
         with:
-          submodules: true
-      - name: lint
-        run: make lint
+          setupOnly: true
+          vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
+      - name: deps
+        run: |
+          $VCPKG_ROOT/vcpkg install pe-parse
       - name: build
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} ..
+          cmake \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            ..
           cmake --build .
-  windows:
+  winchecksec-windows:
     strategy:
       matrix:
         architecture: ["x64", "Win32"]
@@ -36,12 +50,22 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Restore from cache and install vcpkg
+      uses: lukka/run-vcpkg@v2
       with:
-        submodules: true
+        setupOnly: true
+        vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
+    - name: deps
+      run: |
+        $VCPKG_ROOT/vcpkg install pe-parse
     - name: build
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} ..
+        cmake `
+          -G "Visual Studio 16 2019" `
+          -A ${{ matrix.architecture }} `
+          -DCMAKE_TOOLCHAIN_FILE=$ENV:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake `
+          ..
         cmake --build . --config ${{ matrix.build-type }}
 
