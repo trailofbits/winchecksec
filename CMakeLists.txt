@@ -20,7 +20,7 @@ target_compile_definitions(winchecksec-bin PRIVATE _WINCHECKSEC_STANDALONE=1)
 target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library)
 if (MSVC)
     target_sources(winchecksec-bin PRIVATE authenticode.cc)
-    target_link_libraries(winchecksec-bin wintrust)
+    target_link_libraries(winchecksec-bin PRIVATE wintrust)
 endif ()
 
 set_target_properties(winchecksec-bin PROPERTIES OUTPUT_NAME winchecksec)
