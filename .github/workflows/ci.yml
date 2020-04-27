@@ -30,9 +30,7 @@ jobs:
         with:
           setupOnly: true
           vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
-      - name: deps
-        run: |
-          $VCPKG_ROOT/vcpkg install pe-parse
+          vcpkgPackages: pe-parse
       - name: build
         run: |
           mkdir build
@@ -56,10 +54,7 @@ jobs:
       with:
         setupOnly: true
         vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
-    - name: deps
-      shell: bash
-      run: |
-        $VCPKG_ROOT/vcpkg install pe-parse
+        vcpkgPackages: pe-parse
     - name: build
       shell: bash
       run: |
