@@ -9,39 +9,66 @@ on:
     # run CI every day even if no PRs/merges occur
     - cron:  '0 12 * * *'
 
+env:
+  vcpkg-commit: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
+  vcpkg-install: pe-parse
+
 jobs:
-  linux:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: lint
+        run: make lint
+
+  winchecksec:
     strategy:
       matrix:
         build-type: ["Debug", "Release"]
         platform: ["ubuntu-latest", "macos-latest"]
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v2
+      - name: Restore from cache and install vcpkg
+        uses: lukka/run-vcpkg@v2
         with:
-          submodules: true
-      - name: lint
-        run: make lint
+          vcpkgGitCommitId: ${{ env.vcpkg-commit }}
+          vcpkgArguments: ${{ env.vcpkg-install }}
       - name: build
         run: |
           mkdir build
           cd build
-          cmake -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} ..
+          cmake \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            ..
           cmake --build .
-  windows:
+
+  winchecksec-windows:
     strategy:
       matrix:
-        architecture: ["x64", "Win32"]
+        build-arch:
+          - { arch: "x64", triplet: "x64-windows" }
+          - { arch: "Win32", triplet: "x86-windows" }
         build-type: ["Debug", "Release"]
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Restore from cache and install vcpkg
+      uses: lukka/run-vcpkg@v2
       with:
-        submodules: true
+        vcpkgGitCommitId: ${{ env.vcpkg-commit }}
+        vcpkgArguments: ${{ env.vcpkg-install }}
+        vcpkgTriplet: ${{ matrix.build-arch.triplet }}
     - name: build
+      shell: bash
       run: |
         mkdir build
         cd build
-        cmake -G "Visual Studio 16 2019" -A ${{ matrix.architecture }} ..
+        cmake \
+          -G "Visual Studio 16 2019" \
+          -A ${{ matrix.build-arch.arch }} \
+          -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+          ..
         cmake --build . --config ${{ matrix.build-type }}
 

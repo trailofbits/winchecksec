@@ -2,30 +2,25 @@ project(winchecksec)
 
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-add_subdirectory(pe-parse)
-include_directories(pe-parse/pe-parser-library/include)
-link_directories(build/pe-parse/pe-parser-library/${CMAKE_BUILD_TYPE})
+find_package(pe-parse REQUIRED)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(winchecksec SHARED Checksec.cc Checksec.h)
+add_library(winchecksec Checksec.cc Checksec.h)
 target_compile_definitions(winchecksec PRIVATE _WINCHECKSEC_EXPORT=1)
+target_link_libraries(winchecksec PRIVATE pe-parse::pe-parser-library)
 if (MSVC)
     target_sources(winchecksec PRIVATE authenticode.cc)
-    target_link_libraries(winchecksec wintrust pe-parser-library)
-else ()
-    target_link_libraries(winchecksec pe-parser-library)
 endif ()
 
 # Dumb hack to build an executable with the same name.
 add_executable(winchecksec-bin Checksec.cc main.cc)
 target_compile_definitions(winchecksec-bin PRIVATE _WINCHECKSEC_STANDALONE=1)
+target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library)
 if (MSVC)
     target_sources(winchecksec-bin PRIVATE authenticode.cc)
-    target_link_libraries(winchecksec-bin wintrust pe-parser-library)
-else ()
-    target_link_libraries(winchecksec-bin pe-parser-library)
+    target_link_libraries(winchecksec-bin PRIVATE wintrust)
 endif ()
 
 set_target_properties(winchecksec-bin PROPERTIES OUTPUT_NAME winchecksec)

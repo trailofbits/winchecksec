@@ -21,23 +21,27 @@ The following security features are currently detected:
 
 ## Building
 
-`winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse), and should build
-with any reasonably modern `cmake`. It'll audit binaries of any architecture.
+`winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse), which can be
+installed via `vcpkg`:
+
+```bash
+$ vcpkg install pe-parse
+```
 
 ### Building on Linux
 ```bash
-$ git clone --recurse-submodules https://github.com/trailofbits/winchecksec.git
+$ git clone https://github.com/trailofbits/winchecksec.git
 $ cd winchecksec
 $ mkdir build
 $ cd build
-$ cmake ..
-$ cmake --build . --config Release
+$ cmake -DCMAKE_BUILD_TYPE=Release ..
+$ cmake --build .
 $ ./build/winchecksec
 ```
 
 ### Building on Windows
 ```cmd
-> git clone --recurse-submodules https://github.com/trailofbits/winchecksec.git
+> git clone https://github.com/trailofbits/winchecksec.git
 > cd winchecksec
 > mkdir build
 > cd build
