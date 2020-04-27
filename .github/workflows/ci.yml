@@ -64,6 +64,7 @@ jobs:
         cmake \
           -G "Visual Studio 16 2019" \
           -A ${{ matrix.architecture }} \
+          -DVCPKG_TARGET_TRIPLET=x64-windows \
           -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
           ..
         cmake --build . --config ${{ matrix.build-type }}
