@@ -55,6 +55,7 @@ jobs:
         setupOnly: true
         vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
         vcpkgPackages: pe-parse
+        vcpkgTriplet: x64-windows
     - name: build
       shell: bash
       run: |
