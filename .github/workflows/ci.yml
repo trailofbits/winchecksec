@@ -43,7 +43,9 @@ jobs:
   winchecksec-windows:
     strategy:
       matrix:
-        architecture: ["x64", "Win32"]
+        build-arch:
+          - { arch: "x64", triplet: "x64-windows" }
+          - { arch: "Win32", triplet: "x86-windows" }
         build-type: ["Debug", "Release"]
     runs-on: windows-latest
     steps:
@@ -53,7 +55,7 @@ jobs:
       with:
         vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
         vcpkgArguments: pe-parse
-        vcpkgTriplet: x64-windows
+        vcpkgTriplet: ${{ matrix.build-arch.triplet }}
     - name: build
       shell: bash
       run: |
@@ -61,8 +63,8 @@ jobs:
         cd build
         cmake \
           -G "Visual Studio 16 2019" \
-          -A ${{ matrix.architecture }} \
-          -DVCPKG_TARGET_TRIPLET=x64-windows \
+          -A ${{ matrix.build-arch.arch }} \
+          -DVCPKG_TARGET_TRIPLET=${{ matrix.build-arch.triplet }} \
           -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
           ..
         cmake --build . --config ${{ matrix.build-type }}
