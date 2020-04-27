@@ -28,7 +28,6 @@ jobs:
       - name: Restore from cache and install vcpkg
         uses: lukka/run-vcpkg@v2
         with:
-          setupOnly: true
           vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
           vcpkgArguments: pe-parse
       - name: build
@@ -52,7 +51,6 @@ jobs:
     - name: Restore from cache and install vcpkg
       uses: lukka/run-vcpkg@v2
       with:
-        setupOnly: true
         vcpkgGitCommitId: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
         vcpkgArguments: pe-parse
         vcpkgTriplet: x64-windows
