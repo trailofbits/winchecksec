@@ -8,7 +8,7 @@
 #include <codecvt>
 
 namespace checksec {
-const bool Checksec::isAuthenticode() const {
+const MitigationReport Checksec::isAuthenticode() const {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     std::wstring filePathW = converter.from_bytes(filepath_);
 
@@ -43,6 +43,10 @@ const bool Checksec::isAuthenticode() const {
 
     WinVerifyTrust(NULL, &policyGUID, &trustData);
 
-    return status == ERROR_SUCCESS;
+    if (status == ERROR_SUCCESS) {
+        return REPORT(Present, kAuthenticodeDescription);
+    } else {
+        return REPORT(NotPresent, kAuthenticodeDescription);
+    }
 }
 }  // namespace checksec
