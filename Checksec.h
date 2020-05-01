@@ -26,6 +26,11 @@ using json = nlohmann::json;
 
 namespace checksec {
 
+#define REPORT_EXPLAIN(presence, description, explanation) \
+    { MitigationPresence::presence, description, explanation }
+#define REPORT(presence, description) \
+    REPORT_EXPLAIN(presence, description, std::nullopt)
+
 constexpr const char kDynamicBaseDescription[] =
     "Binaries with dynamic base support can be "
     "dynamically rebased, enabling ASLR.";
@@ -90,6 +95,7 @@ class EXPORT ChecksecError : public std::runtime_error {
 struct EXPORT MitigationReport {
     MitigationPresence presence;
     std::string description;
+    std::optional<std::string> explanation;
 
     operator bool() const { return presence == MitigationPresence::Present; }
 };

@@ -4,6 +4,7 @@
 
 #include <ostream>
 #include <vector>
+#include <optional>
 
 #include "vendor/json.hpp"
 using json = nlohmann::json;
@@ -40,6 +41,10 @@ void to_json(json& j, const MitigationReport& r) {
         {"presence", r.presence},
         {"description", r.description},
     };
+
+    if (r.explanation) {
+        j["explanation"] = r.explanation.value();
+    }
 }
 
 class LoadedImage {
@@ -185,9 +190,9 @@ Checksec::operator json() const {
 
 const MitigationReport Checksec::isDynamicBase() const {
     if (dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) {
-        return {MitigationPresence::Present, kDynamicBaseDescription};
+        return REPORT(Present, kDynamicBaseDescription);
     } else {
-        return {MitigationPresence::NotPresent, kDynamicBaseDescription};
+        return REPORT(NotPresent, kDynamicBaseDescription);
     }
 }
 
@@ -196,13 +201,18 @@ const MitigationReport Checksec::isASLR() const {
     // * It was linked with /DYNAMICBASE and has *not* had its relocation
     // entries stripped, or
     // * It's managed by the CLR, which is always ASLR'd.
-
-    if ((!(imageCharacteristics_ & peparse::IMAGE_FILE_RELOCS_STRIPPED) &&
-         isDynamicBase()) ||
-        isDotNET()) {
-        return {MitigationPresence::Present, kASLRDescription};
+    if (isDynamicBase()) {
+        if (imageCharacteristics_ & peparse::IMAGE_FILE_RELOCS_STRIPPED) {
+            return REPORT_EXPLAIN(
+                NotPresent, kASLRDescription,
+                "Image has stripped relocations, making ASLR impossible.");
+        }
+        return REPORT(Present, kASLRDescription);
+    } else if (isDotNET()) {
+        return REPORT_EXPLAIN(Present, kASLRDescription,
+                              ".NET binaries have ASLR via the .NET runtime.");
     } else {
-        return {MitigationPresence::NotPresent, kASLRDescription};
+        return REPORT(NotPresent, kASLRDescription);
     }
 }
 
@@ -214,52 +224,54 @@ const MitigationReport Checksec::isHighEntropyVA() const {
     if ((dllCharacteristics_ &
          peparse::IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA) &&
         isASLR()) {
-        return {MitigationPresence::Present, kHighEntropyVADescription};
+        return REPORT(Present, kHighEntropyVADescription);
     } else {
-        return {MitigationPresence::NotPresent, kHighEntropyVADescription};
+        return REPORT(NotPresent, kHighEntropyVADescription);
     }
 }
 
 const MitigationReport Checksec::isForceIntegrity() const {
     if (dllCharacteristics_ &
         peparse::IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY) {
-        return {MitigationPresence::Present, kForceIntegrityDescription};
+        return REPORT(Present, kForceIntegrityDescription);
     } else {
-        return {MitigationPresence::NotPresent, kForceIntegrityDescription};
+        return REPORT(NotPresent, kForceIntegrityDescription);
     }
 }
 
 const MitigationReport Checksec::isNX() const {
-    if ((dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_NX_COMPAT) ||
-        isDotNET()) {
-        return {MitigationPresence::Present, kNXDescription};
+    if ((dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_NX_COMPAT)) {
+        return REPORT(Present, kNXDescription);
+    } else if (isDotNET()) {
+        return REPORT_EXPLAIN(Present, kNXDescription,
+                              ".NET binaries have DEP via the .NET runtime.");
     } else {
-        return {MitigationPresence::NotPresent, kNXDescription};
+        return REPORT(NotPresent, kNXDescription);
     }
 }
 
 const MitigationReport Checksec::isIsolation() const {
     if (!(dllCharacteristics_ &
           peparse::IMAGE_DLLCHARACTERISTICS_NO_ISOLATION)) {
-        return {MitigationPresence::Present, kIsolationDescription};
+        return REPORT(Present, kIsolationDescription);
     } else {
-        return {MitigationPresence::NotPresent, kIsolationDescription};
+        return REPORT(NotPresent, kIsolationDescription);
     }
 }
 
 const MitigationReport Checksec::isSEH() const {
     if (!(dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_NO_SEH)) {
-        return {MitigationPresence::Present, kSEHDescription};
+        return REPORT(Present, kSEHDescription);
     } else {
-        return {MitigationPresence::NotPresent, kSEHDescription};
+        return REPORT(NotPresent, kSEHDescription);
     }
 }
 
 const MitigationReport Checksec::isCFG() const {
     if (dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_GUARD_CF) {
-        return {MitigationPresence::Present, kCFGDescription};
+        return REPORT(Present, kCFGDescription);
     } else {
-        return {MitigationPresence::NotPresent, kCFGDescription};
+        return REPORT(NotPresent, kCFGDescription);
     }
 }
 
@@ -267,18 +279,18 @@ const MitigationReport Checksec::isRFG() const {
     // NOTE(ww): a load config under 148 bytes implies the absence of the
     // GuardFlags field.
     if (loadConfigSize_ < 148) {
-        std::cerr << "Warn: no or short load config, assuming no RFG"
-                  << "\n";
-        return {MitigationPresence::NotPresent, kRFGDescription};
+        return REPORT_EXPLAIN(NotPresent, kRFGDescription,
+                              "Image load config is too short to contain RFG "
+                              "configuration fields.");
     }
 
     // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
     if ((loadConfigGuardFlags_ & 0x00020000) &&
         (loadConfigGuardFlags_ & 0x00040000 ||
          loadConfigGuardFlags_ & 0x00080000)) {
-        return {MitigationPresence::Present, kRFGDescription};
+        return REPORT(Present, kRFGDescription);
     } else {
-        return {MitigationPresence::NotPresent, kRFGDescription};
+        return REPORT(NotPresent, kRFGDescription);
     }
 }
 
@@ -286,16 +298,16 @@ const MitigationReport Checksec::isSafeSEH() const {
     // NOTE(ww): a load config under 112 bytes implies the absence of the
     // SafeSEH fields.
     if (loadConfigSize_ < 112) {
-        std::cerr << "Warn: no or short load config, assuming no SafeSEH"
-                  << "\n";
-        return {MitigationPresence::NotPresent, kSafeSEHDescription};
+        return REPORT_EXPLAIN(
+            NotPresent, kSafeSEHDescription,
+            "Image load config is too short to contain a SE handler table.");
     }
 
     if (isSEH() && loadConfigSEHandlerTable_ != 0 &&
         loadConfigSEHandlerCount_ != 0) {
-        return {MitigationPresence::Present, kSafeSEHDescription};
+        return REPORT(Present, kSafeSEHDescription);
     } else {
-        return {MitigationPresence::NotPresent, kSafeSEHDescription};
+        return REPORT(NotPresent, kSafeSEHDescription);
     }
 }
 
@@ -303,23 +315,23 @@ const MitigationReport Checksec::isGS() const {
     // NOTE(ww): a load config under 96 bytes implies the absence of the
     // SecurityCookie field.
     if (loadConfigSize_ < 96) {
-        std::cerr << "Warn: no or short load config, assuming no GS"
-                  << "\n";
-        return {MitigationPresence::NotPresent, kGSDescription};
+        return REPORT_EXPLAIN(
+            NotPresent, kGSDescription,
+            "Image load config is too short to contain a GS security cookie.");
     }
 
     if (loadConfigSecurityCookie_ != 0) {
-        return {MitigationPresence::Present, kGSDescription};
+        return REPORT(Present, kGSDescription);
     } else {
-        return {MitigationPresence::NotPresent, kGSDescription};
+        return REPORT(NotPresent, kGSDescription);
     }
 }
 
 const MitigationReport Checksec::isDotNET() const {
     if (clrConfig_.VirtualAddress != 0) {
-        return {MitigationPresence::Present, kDotNETDescription};
+        return REPORT(Present, kDotNETDescription);
     } else {
-        return {MitigationPresence::NotPresent, kDotNETDescription};
+        return REPORT(NotPresent, kDotNETDescription);
     }
 }
 

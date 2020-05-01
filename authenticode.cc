@@ -44,9 +44,9 @@ const MitigationReport Checksec::isAuthenticode() const {
     WinVerifyTrust(NULL, &policyGUID, &trustData);
 
     if (status == ERROR_SUCCESS) {
-        return {MitigationPresence::Present, kAuthenticodeDescription};
+        return REPORT(Present, kAuthenticodeDescription);
     } else {
-        return {MitigationPresence::NotPresent, kAuthenticodeDescription};
+        return REPORT(NotPresent, kAuthenticodeDescription);
     }
 }
 }  // namespace checksec
