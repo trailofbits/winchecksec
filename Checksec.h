@@ -72,7 +72,7 @@ constexpr const char kRFGDescription[] =
 
 constexpr const char kSafeSEHDescription[] =
     "Binaries with SafeSEH enabled have additional protections for stack-based "
-    "structured exception handlers";
+    "structured exception handlers.";
 
 constexpr const char kGSDescription[] =
     "Binaries with GS enabled have additional protections against stack-based "
