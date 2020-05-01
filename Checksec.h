@@ -79,7 +79,7 @@ constexpr const char kGSDescription[] =
     "buffer overflows.";
 
 constexpr const char kDotNETDescription[] =
-    ".NET binaries run in a managed environment with many default mitigations";
+    ".NET binaries run in a managed environment with many default mitigations.";
 
 enum class EXPORT MitigationPresence {
     Present,
