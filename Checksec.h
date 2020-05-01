@@ -39,7 +39,7 @@ constexpr const char kDynamicBaseDescription[] =
 constexpr const char kASLRDescription[] =
     "Binaries with ASLR support have randomized virtual memory layouts. "
     "ASLR is enabled by dynamic base support (without stripped relocation "
-    "entries) or by using a managed runtime like .NET";
+    "entries) or by using a managed runtime like .NET.";
 
 constexpr const char kHighEntropyVADescription[] =
     "Binaries with high entropy virtual address support can leverage more of "
