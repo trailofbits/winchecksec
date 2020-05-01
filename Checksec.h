@@ -76,7 +76,7 @@ constexpr const char kSafeSEHDescription[] =
 
 constexpr const char kGSDescription[] =
     "Binaries with GS enabled have additional protections against stack-based "
-    "buffer overflows";
+    "buffer overflows.";
 
 constexpr const char kDotNETDescription[] =
     ".NET binaries run in a managed environment with many default mitigations";
