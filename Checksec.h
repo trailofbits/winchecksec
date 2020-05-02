@@ -128,6 +128,7 @@ class EXPORT Checksec {
 
    private:
     std::string filepath_;
+    std::uint16_t targetMachine_ = 0;
     std::uint16_t imageCharacteristics_ = 0;
     std::uint16_t dllCharacteristics_ = 0;
     std::uint32_t loadConfigSize_ = 0;
