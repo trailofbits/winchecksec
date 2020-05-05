@@ -72,6 +72,7 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath) {
     peparse::nt_header_32 nt = (&loadedImage)->peHeader.nt;
     peparse::file_header* imageFileHeader = &(nt.FileHeader);
 
+    targetMachine_ = imageFileHeader->Machine;
     imageCharacteristics_ = imageFileHeader->Characteristics;
     std::vector<std::uint8_t> loadConfigData;
 
@@ -295,6 +296,12 @@ const MitigationReport Checksec::isRFG() const {
 }
 
 const MitigationReport Checksec::isSafeSEH() const {
+    if (targetMachine_ != peparse::IMAGE_FILE_MACHINE_I386) {
+        return REPORT_EXPLAIN(
+            NotApplicable, kSafeSEHDescription,
+            "The SafeSEH mitigation only applies to x86_32 binaries.");
+    }
+
     // NOTE(ww): a load config under 112 bytes implies the absence of the
     // SafeSEH fields.
     if (loadConfigSize_ < 112) {
