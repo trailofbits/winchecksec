@@ -6,11 +6,7 @@ find_package(pe-parse REQUIRED)
 find_package(uthenticode REQUIRED)
 
 # TODO(ww): Remove this when we bump to uthenticode 1.0.3.
-find_package(
-  OpenSSL 1.1
-  COMPONENTS Crypto
-  REQUIRED
-)
+find_package(OpenSSL 1.1 COMPONENTS Crypto REQUIRED)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
