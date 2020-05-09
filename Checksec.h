@@ -101,6 +101,25 @@ struct EXPORT MitigationReport {
     operator bool() const { return presence == MitigationPresence::Present; }
 };
 
+class LoadedImage {
+   public:
+    explicit LoadedImage(const std::string path) {
+        if (!(pe_ = peparse::ParsePEFromFile(path.c_str()))) {
+            throw ChecksecError("Couldn't load file; corrupt or not a PE?");
+        }
+    }
+    ~LoadedImage() { peparse::DestructParsedPE(pe_); }
+
+    // can't make copies of LoadedImage
+    LoadedImage(const LoadedImage&) = delete;
+    LoadedImage& operator=(const LoadedImage&) = delete;
+
+    peparse::parsed_pe* get() const { return pe_; }
+
+   private:
+    peparse::parsed_pe* pe_;
+};
+
 class EXPORT Checksec {
    public:
     Checksec(std::string filepath);
@@ -115,9 +134,7 @@ class EXPORT Checksec {
     const MitigationReport isIsolation() const;
     const MitigationReport isSEH() const;
     const MitigationReport isCFG() const;
-#ifdef _WIN32
     const MitigationReport isAuthenticode() const;
-#endif
     const MitigationReport isRFG() const;
     const MitigationReport isSafeSEH() const;
     const MitigationReport isGS() const;
@@ -127,6 +144,7 @@ class EXPORT Checksec {
     friend std::ostream& operator<<(std::ostream& os, Checksec&);
 
    private:
+    LoadedImage loadedImage_;
     std::string filepath_;
     std::uint16_t targetMachine_ = 0;
     std::uint16_t imageCharacteristics_ = 0;
