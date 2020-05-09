@@ -82,11 +82,11 @@ wrap it in a loop.
 
 ## Hacking
 
-`winchecksec` is formatted with `clang-format`. You can use the `lint` target to auto-format it
-locally:
+`winchecksec` is formatted with `clang-format`. You can use the `clang-format` target to
+auto-format it locally:
 
 ```bash
-$ make lint
+$ make clang-format
 ```
 
 ## Statistics for different flags across EXEs on Windows 10
