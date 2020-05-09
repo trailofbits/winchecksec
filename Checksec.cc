@@ -48,7 +48,8 @@ void to_json(json& j, const MitigationReport& r) {
     }
 }
 
-Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(filepath) {
+Checksec::Checksec(std::string filepath)
+    : filepath_(filepath), loadedImage_(filepath) {
     peparse::nt_header_32 nt = loadedImage_.get()->peHeader.nt;
     peparse::file_header* imageFileHeader = &(nt.FileHeader);
 
