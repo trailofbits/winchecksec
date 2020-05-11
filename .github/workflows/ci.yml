@@ -10,7 +10,7 @@ on:
     - cron:  '0 12 * * *'
 
 env:
-  vcpkg-commit: d4a415b7fa3f0d0ea14a789d5778abfc666ef2d0
+  vcpkg-commit: 43579f3d7f111810902207aa10251193d3903af2
   vcpkg-install: pe-parse uthenticode
 
 jobs:

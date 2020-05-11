@@ -5,14 +5,6 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 find_package(pe-parse REQUIRED)
 find_package(uthenticode REQUIRED)
 
-# TODO(ww): Remove this when we bump to uthenticode 1.0.3.
-find_package(OpenSSL 1.1 COMPONENTS Crypto REQUIRED)
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-  if (NOT MSVC)
-    add_link_options(-fsanitize=address)
-  endif ()
-endif ()
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
