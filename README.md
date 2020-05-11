@@ -59,22 +59,40 @@ enabled by passing `-j`:
 ```cmd
 > .\Release\winchecksec.exe C:\Windows\notepad.exe
 
-Dynamic Base    : true
-ASLR            : true
-High Entropy VA : true
-Force Integrity : false
-Isolation       : true
-NX              : true
-SEH             : true
-CFG             : true
-RFG             : false
-SafeSEH         : false
-GS              : true
-Authenticode    : false
+Dynamic Base    : "Present"
+ASLR            : "Present"
+High Entropy VA : "Present"
+Force Integrity : "NotPresent"
+Isolation       : "Present"
+NX              : "Present"
+SEH             : "Present"
+CFG             : "NotPresent"
+RFG             : "NotPresent"
+SafeSEH         : "NotApplicable"
+GS              : "Present"
+Authenticode    : "NotPresent"
+.NET            : "NotPresent"
 
 > .\Release\winchecksec.exe -j C:\Windows\notepad.exe
 
-{"aslr":true,"authenticode":false,"cfg":true,"dynamicBase":true,"forceIntegrity":false,"gs":true,"highEntropyVA":true,"isolation":true,"nx":true,"path":"C:\\Windows\\notepad.exe","rfg":false,"safeSEH":false,"seh":true}
+{
+   "path": "C:\\Windows\\notepad.exe",
+   "mitigations": {
+      "dynamicBase": {
+         "presence": "Present",
+         "description": "Binaries with dynamic base support can be dynamically rebased, enabling ASLR."
+      },
+      "rfg": {
+         "description": "Binaries with RFG enabled have additional return-oriented-programming protections.",
+         "presence": "NotPresent"
+      },
+      "seh": {
+         "description": "Binaries with SEH support can use structured exception handlers.",
+         "presence": "Present"
+      },
+      // ...
+   }
+}
 ```
 
 `winchecksec` only takes one file at a time. To run it on multiple files or entire directories,
