@@ -5,11 +5,6 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 find_package(pe-parse REQUIRED)
 find_package(uthenticode REQUIRED)
 
-# TODO(ww): Remove this when we bump to uthenticode 1.0.4.
-if (NOT MSVC)
-  link_libraries(${CMAKE_DL_LIBS})
-endif (NOT MSVC)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -23,3 +18,9 @@ target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library uthent
 
 # Dumb hack to build an executable with the same name.
 set_target_properties(winchecksec-bin PROPERTIES OUTPUT_NAME winchecksec)
+
+# TODO(ww): Remove this when we bump to uthenticode 1.0.4.
+if (NOT MSVC)
+  target_link_libraries(winchecksec PRIVATE ${CMAKE_DL_LIBS})
+  target_link_libraries(winchecksec-bin PRIVATE ${CMAKE_DL_LIBS})
+endif (NOT MSVC)
