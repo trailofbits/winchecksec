@@ -18,9 +18,3 @@ target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library uthent
 
 # Dumb hack to build an executable with the same name.
 set_target_properties(winchecksec-bin PROPERTIES OUTPUT_NAME winchecksec)
-
-# TODO(ww): Remove this when we bump to uthenticode 1.0.4.
-if (NOT MSVC)
-  target_link_libraries(winchecksec PRIVATE ${CMAKE_DL_LIBS})
-  target_link_libraries(winchecksec-bin PRIVATE ${CMAKE_DL_LIBS})
-endif (NOT MSVC)
