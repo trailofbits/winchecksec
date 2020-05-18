@@ -1,0 +1,11 @@
+{
+  "format": {
+    "line_width": 100,
+    "tab_size": 2,
+    "separate_ctrl_name_with_space": true,
+    "separate_fn_name_with_space": false,
+    "dangle_parens": true,
+    "dangle_align": "prefix",
+    "line_ending": "unix"
+  }
+}

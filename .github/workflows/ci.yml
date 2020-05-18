@@ -10,16 +10,23 @@ on:
     - cron:  '0 12 * * *'
 
 env:
-  vcpkg-commit: 422fb5df87f6ae2d01a6ccdca7211a54c0e88fa1
-  vcpkg-install: pe-parse
+  vcpkg-commit: 8a583e80da3b72141105da9003175679af2fcb92
+  vcpkg-install: pe-parse uthenticode
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: lint
-        run: make lint
+
+      - name: deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format-9
+          sudo pip3 install cmake-format
+
+      - name: format
+        run: make format
 
   winchecksec:
     strategy:

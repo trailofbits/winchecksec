@@ -1,6 +1,7 @@
 #include "Checksec.h"
 
 #include <parser-library/parse.h>
+#include <uthenticode.h>
 
 #include <ostream>
 #include <vector>
@@ -47,29 +48,9 @@ void to_json(json& j, const MitigationReport& r) {
     }
 }
 
-class LoadedImage {
-   public:
-    explicit LoadedImage(const std::string path) {
-        if (!(pe_ = peparse::ParsePEFromFile(path.c_str()))) {
-            throw ChecksecError("Couldn't load file; corrupt or not a PE?");
-        }
-    }
-    ~LoadedImage() { peparse::DestructParsedPE(pe_); }
-
-    // can't make copies of LoadedImage
-    LoadedImage(const LoadedImage&) = delete;
-    LoadedImage& operator=(const LoadedImage&) = delete;
-
-    peparse::parsed_pe* operator&() { return pe_; }
-
-   private:
-    peparse::parsed_pe* pe_;
-};
-
-Checksec::Checksec(std::string filepath) : filepath_(filepath) {
-    LoadedImage loadedImage{filepath};
-
-    peparse::nt_header_32 nt = (&loadedImage)->peHeader.nt;
+Checksec::Checksec(std::string filepath)
+    : filepath_(filepath), loadedImage_(filepath) {
+    peparse::nt_header_32 nt = loadedImage_.get()->peHeader.nt;
     peparse::file_header* imageFileHeader = &(nt.FileHeader);
 
     targetMachine_ = imageFileHeader->Machine;
@@ -100,7 +81,7 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath) {
         }
 
         if (!peparse::GetDataDirectoryEntry(
-                (&loadedImage), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+                loadedImage_.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
             std::cerr << "Warn: No load config in the PE"
                       << "\n";
             return;
@@ -140,7 +121,7 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath) {
         }
 
         if (!peparse::GetDataDirectoryEntry(
-                (&loadedImage), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+                loadedImage_.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
             std::cerr << "Warn: No load config in the PE"
                       << "\n";
             return;
@@ -179,9 +160,7 @@ Checksec::operator json() const {
                 {"rfg", isRFG()},
                 {"safeSEH", isSafeSEH()},
                 {"gs", isGS()},
-#if _WIN32
                 {"authenticode", isAuthenticode()},
-#endif
                 {"dotNET", isDotNET()},
             },
         },
@@ -276,6 +255,14 @@ const MitigationReport Checksec::isCFG() const {
     }
 }
 
+const MitigationReport Checksec::isAuthenticode() const {
+    if (uthenticode::verify(loadedImage_.get())) {
+        return REPORT(Present, kAuthenticodeDescription);
+    } else {
+        return REPORT(NotPresent, kAuthenticodeDescription);
+    }
+}
+
 const MitigationReport Checksec::isRFG() const {
     // NOTE(ww): a load config under 148 bytes implies the absence of the
     // GuardFlags field.
@@ -360,10 +347,8 @@ std::ostream& operator<<(std::ostream& os, Checksec& self) {
     os << "SafeSEH         : " << j["mitigations"]["safeSEH"]["presence"]
        << "\n";
     os << "GS              : " << j["mitigations"]["gs"]["presence"] << "\n";
-#ifdef _WIN32
     os << "Authenticode    : " << j["mitigations"]["authenticode"]["presence"]
        << "\n";
-#endif
     os << ".NET            : " << j["mitigations"]["dotNET"]["presence"]
        << "\n";
     return os;
