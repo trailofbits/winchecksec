@@ -10,6 +10,10 @@
 #include "vendor/json.hpp"
 using json = nlohmann::json;
 
+#define REPORT_EXPLAIN(presence, description, explanation) \
+    { MitigationPresence::presence, description, explanation }
+#define REPORT(presence, description) REPORT_EXPLAIN(presence, description, std::nullopt)
+
 namespace checksec {
 
 void to_json(json& j, const MitigationPresence& p) {

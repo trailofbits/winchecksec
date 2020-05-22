@@ -27,10 +27,6 @@ using json = nlohmann::json;
 
 namespace checksec {
 
-#define REPORT_EXPLAIN(presence, description, explanation) \
-    { MitigationPresence::presence, description, explanation }
-#define REPORT(presence, description) REPORT_EXPLAIN(presence, description, std::nullopt)
-
 constexpr const char kDynamicBaseDescription[] =
     "Binaries with dynamic base support can be "
     "dynamically rebased, enabling ASLR.";
