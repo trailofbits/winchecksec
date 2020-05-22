@@ -1,6 +1,9 @@
 name: CI
 
 on:
+  release:
+    types:
+      - published
   push:
     branches:
       - master
@@ -36,11 +39,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v2
+
       - name: Restore from cache and install vcpkg
         uses: lukka/run-vcpkg@v2
         with:
           vcpkgGitCommitId: ${{ env.vcpkg-commit }}
           vcpkgArguments: ${{ env.vcpkg-install }}
+
       - name: build
         run: |
           mkdir build
@@ -50,6 +55,21 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
             ..
           cmake --build .
+
+      - name: archive
+        if: github.event.release
+        run: zip -r build.zip build
+
+      - name: publish
+        if: github.event.release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: build.zip
+          asset_name: ${{ matrix.platform }}.${{ matrix.build-type }}.zip
+          asset_content_type: application/zip
 
   winchecksec-windows:
     strategy:
@@ -61,12 +81,14 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+
     - name: Restore from cache and install vcpkg
       uses: lukka/run-vcpkg@v2
       with:
         vcpkgGitCommitId: ${{ env.vcpkg-commit }}
         vcpkgArguments: ${{ env.vcpkg-install }}
         vcpkgTriplet: ${{ matrix.build-arch.triplet }}
+
     - name: build
       shell: bash
       run: |
@@ -79,3 +101,20 @@ jobs:
           ..
         cmake --build . --config ${{ matrix.build-type }}
 
+    - name: archive
+      if: |
+        github.event.release
+      run:
+        7z a build.zip build
+
+    - name: publish
+      if: |
+        github.event.release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: build.zip
+        asset_name: windows.${{ matrix.build-arch.arch }}.${{ matrix.build-type }}.zip
+        asset_content_type: application/zip
