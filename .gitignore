@@ -33,3 +33,6 @@
 
 # CMake build state
 build/
+
+# Doxygen builds
+doc/
