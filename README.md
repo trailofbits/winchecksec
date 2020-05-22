@@ -52,9 +52,9 @@ $ ./build/winchecksec
 
 ## Usage
 
-`winchecksec` has two output modes: a plain-text mode for easy reading, and a JSON mode
-for consumption in other programs. The plain-text mode is the default; JSON output is
-enabled by passing `-j`:
+As a command-line tool, `winchecksec` has two output modes: a plain-text mode for easy reading,
+and a JSON mode for consumption in other programs. The plain-text mode is the default; JSON output
+is enabled by passing `-j`:
 
 ```cmd
 > .\Release\winchecksec.exe C:\Windows\notepad.exe
@@ -95,8 +95,11 @@ Authenticode    : "NotPresent"
 }
 ```
 
-`winchecksec` only takes one file at a time. To run it on multiple files or entire directories,
+The `winchecksec` CLI only takes one file at a time. To run it on multiple files or entire directories,
 wrap it in a loop.
+
+`winchecksec` also provides a C++ API; documentation is hosted
+[here](https://trailofbits.github.io/winchecksec/).
 
 ## Hacking
 
