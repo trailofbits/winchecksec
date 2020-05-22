@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - ww/docs
 
 jobs:
   docs:
