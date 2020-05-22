@@ -1,3 +1,4 @@
+CLANG_FORMAT := clang-format
 ALL_SRCS := $(wildcard *.cc) $(wildcard *.h)
 
 .PHONY: all
