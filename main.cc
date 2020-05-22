@@ -2,8 +2,6 @@
 
 using namespace std;
 
-static string VERSION = "1.1.2";
-
 void usage(char* argv[]) {
     cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>"
          << "\n";
@@ -13,7 +11,7 @@ void usage(char* argv[]) {
          << "\n";
 }
 
-void version() { cerr << "Winchecksec version " << VERSION << "\n"; }
+void version() { cerr << "Winchecksec version " << WINCHECKSEC_VERSION << "\n"; }
 
 int main(int argc, char* argv[]) {
     if (argc != 2 && argc != 3) {

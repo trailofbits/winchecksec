@@ -1,5 +1,6 @@
 CLANG_FORMAT := clang-format
 ALL_SRCS := $(wildcard *.cc) $(wildcard *.h)
+VERSION := $(shell cat VERSION)
 
 .PHONY: all
 all:
@@ -17,3 +18,9 @@ clang-format:
 cmake-format:
 	cmake-format -i CMakeLists.txt
 	git diff --exit-code
+
+.PHONY: doc
+doc:
+	# Docs only: append the short hash to the version.
+	VERSION=$(VERSION)-$(shell git rev-parse --short HEAD) \
+		doxygen Doxyfile

@@ -1,0 +1,11 @@
+PROJECT_NAME           = "winchecksec"
+PROJECT_NUMBER         = $(VERSION)
+STRIP_FROM_PATH        = .
+INPUT                  = README.md .
+EXCLUDE                = build/
+FILE_PATTERNS          = *.h *.cpp
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+USE_MDFILE_AS_MAINPAGE = README.md
+OUTPUT_DIRECTORY       = doc
+GENERATE_LATEX         = NO
