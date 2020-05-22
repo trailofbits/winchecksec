@@ -11,7 +11,7 @@
 using json = nlohmann::json;
 
 #define REPORT_EXPLAIN(presence, description, explanation) \
-    { MitigationPresence::presence, description, explanation }
+    { MitigationPresence::presence, impl::description, explanation }
 #define REPORT(presence, description) REPORT_EXPLAIN(presence, description, std::nullopt)
 
 namespace checksec {
