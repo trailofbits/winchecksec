@@ -1,0 +1,30 @@
+name: docs-deploy
+
+on:
+  push:
+    branches:
+      - master
+      - ww/docs
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+      - name: docs
+        run: make doc
+
+      - name: deploy
+        uses: peaceiris/actions-gh-pages@v3.5.6
+        with:
+          personal_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./doc/html
+          publish_branch: gh-pages
+          force_orphan: true
