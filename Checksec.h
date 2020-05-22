@@ -208,7 +208,7 @@ class EXPORT Checksec {
      * @return a MitigationReport indicating whether the program contains a (partially) valid
      *  Authenticode signature
      *
-     * @note See the [`uthenticode`](https://trailofbits.github.io/uthenticode/uthenticode_8h.html)
+     * @note See the [`uthenticode`](https://trailofbits.github.io/uthenticode/index.html)
      *       documentation for the details of this check
      */
     const MitigationReport isAuthenticode() const;
