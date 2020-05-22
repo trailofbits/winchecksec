@@ -4,3 +4,4 @@ TabWidth: 4
 UseTab: Never
 SortIncludes: false
 SortUsingDeclarations: false
+ColumnLimit: 100

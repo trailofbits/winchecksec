@@ -48,8 +48,7 @@ void to_json(json& j, const MitigationReport& r) {
     }
 }
 
-Checksec::Checksec(std::string filepath)
-    : filepath_(filepath), loadedImage_(filepath) {
+Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(filepath) {
     peparse::nt_header_32 nt = loadedImage_.get()->peHeader.nt;
     peparse::file_header* imageFileHeader = &(nt.FileHeader);
 
@@ -61,37 +60,32 @@ Checksec::Checksec(std::string filepath)
     if (nt.OptionalMagic == peparse::NT_OPTIONAL_64_MAGIC) {
         peparse::optional_header_64* optionalHeader = &(nt.OptionalHeader64);
         dllCharacteristics_ = optionalHeader->DllCharacteristics;
-        if (optionalHeader->NumberOfRvaAndSizes <
-            peparse::DIR_COM_DESCRIPTOR + 1) {
-            std::cerr
-                << "Warn: short image data directory vector (no CLR info?)"
-                << "\n";
+        if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1) {
+            std::cerr << "Warn: short image data directory vector (no CLR info?)"
+                      << "\n";
             return;
         }
         clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
 
         // Warn and return early if the image data directory vector
         // is too short to contain a reference to the DIR_LOAD_CONFIG.
-        if (optionalHeader->NumberOfRvaAndSizes <
-            peparse::DIR_LOAD_CONFIG + 1) {
-            std::cerr
-                << "Warn: short image data directory vector (no load config?)"
-                << "\n";
+        if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
+            std::cerr << "Warn: short image data directory vector (no load config?)"
+                      << "\n";
             return;
         }
 
-        if (!peparse::GetDataDirectoryEntry(
-                loadedImage_.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+        if (!peparse::GetDataDirectoryEntry(loadedImage_.get(), peparse::DIR_LOAD_CONFIG,
+                                            loadConfigData)) {
             std::cerr << "Warn: No load config in the PE"
                       << "\n";
             return;
         }
         peparse::image_load_config_64 loadConfig;
         if (loadConfigData.size() > sizeof(loadConfig)) {
-            std::cerr
-                << "Warn: large load config, probably contains undocumented "
-                   "fields"
-                << "\n";
+            std::cerr << "Warn: large load config, probably contains undocumented "
+                         "fields"
+                      << "\n";
         }
         memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
         loadConfigSize_ = loadConfig.Size;
@@ -102,36 +96,31 @@ Checksec::Checksec(std::string filepath)
     } else {
         peparse::optional_header_32* optionalHeader = &(nt.OptionalHeader);
         dllCharacteristics_ = optionalHeader->DllCharacteristics;
-        if (optionalHeader->NumberOfRvaAndSizes <
-            peparse::DIR_COM_DESCRIPTOR + 1) {
-            std::cerr
-                << "Warn: short image data directory vector (no CLR info?)"
-                << "\n";
+        if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_COM_DESCRIPTOR + 1) {
+            std::cerr << "Warn: short image data directory vector (no CLR info?)"
+                      << "\n";
             return;
         }
         clrConfig_ = optionalHeader->DataDirectory[peparse::DIR_COM_DESCRIPTOR];
         // Warn and return early if the image data directory vector
         // is too short to contain a reference to the DIR_LOAD_CONFIG.
-        if (optionalHeader->NumberOfRvaAndSizes <
-            peparse::DIR_LOAD_CONFIG + 1) {
-            std::cerr
-                << "Warn: short image data directory vector (no load config?)"
-                << "\n";
+        if (optionalHeader->NumberOfRvaAndSizes < peparse::DIR_LOAD_CONFIG + 1) {
+            std::cerr << "Warn: short image data directory vector (no load config?)"
+                      << "\n";
             return;
         }
 
-        if (!peparse::GetDataDirectoryEntry(
-                loadedImage_.get(), peparse::DIR_LOAD_CONFIG, loadConfigData)) {
+        if (!peparse::GetDataDirectoryEntry(loadedImage_.get(), peparse::DIR_LOAD_CONFIG,
+                                            loadConfigData)) {
             std::cerr << "Warn: No load config in the PE"
                       << "\n";
             return;
         }
         peparse::image_load_config_32 loadConfig;
         if (loadConfigData.size() > sizeof(loadConfig)) {
-            std::cerr
-                << "Warn: large load config, probably contains undocumented "
-                   "fields"
-                << "\n";
+            std::cerr << "Warn: large load config, probably contains undocumented "
+                         "fields"
+                      << "\n";
         }
         memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
         loadConfigSize_ = loadConfig.Size;
@@ -183,9 +172,8 @@ const MitigationReport Checksec::isASLR() const {
     // * It's managed by the CLR, which is always ASLR'd.
     if (isDynamicBase()) {
         if (imageCharacteristics_ & peparse::IMAGE_FILE_RELOCS_STRIPPED) {
-            return REPORT_EXPLAIN(
-                NotPresent, kASLRDescription,
-                "Image has stripped relocations, making ASLR impossible.");
+            return REPORT_EXPLAIN(NotPresent, kASLRDescription,
+                                  "Image has stripped relocations, making ASLR impossible.");
         }
         return REPORT(Present, kASLRDescription);
     } else if (isDotNET()) {
@@ -201,9 +189,7 @@ const MitigationReport Checksec::isHighEntropyVA() const {
     // Only relevant on 64-bit machines with 64-bit images.
     // NOTE(ww): Additionally, don't count a binary as high-entropy capable
     // if it isn't also ASLR'd.
-    if ((dllCharacteristics_ &
-         peparse::IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA) &&
-        isASLR()) {
+    if ((dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA) && isASLR()) {
         return REPORT(Present, kHighEntropyVADescription);
     } else {
         return REPORT(NotPresent, kHighEntropyVADescription);
@@ -211,8 +197,7 @@ const MitigationReport Checksec::isHighEntropyVA() const {
 }
 
 const MitigationReport Checksec::isForceIntegrity() const {
-    if (dllCharacteristics_ &
-        peparse::IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY) {
+    if (dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY) {
         return REPORT(Present, kForceIntegrityDescription);
     } else {
         return REPORT(NotPresent, kForceIntegrityDescription);
@@ -231,8 +216,7 @@ const MitigationReport Checksec::isNX() const {
 }
 
 const MitigationReport Checksec::isIsolation() const {
-    if (!(dllCharacteristics_ &
-          peparse::IMAGE_DLLCHARACTERISTICS_NO_ISOLATION)) {
+    if (!(dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_NO_ISOLATION)) {
         return REPORT(Present, kIsolationDescription);
     } else {
         return REPORT(NotPresent, kIsolationDescription);
@@ -248,6 +232,14 @@ const MitigationReport Checksec::isSEH() const {
 }
 
 const MitigationReport Checksec::isCFG() const {
+    // NOTE(ww): See the /GUARD:CF docs: /DYNAMICBASE is required.
+    // We check for ASLR instead, since just checking for /DYNAMICBASE
+    // could result in a false-positive (with stripped relocations).
+    if (!isASLR()) {
+        return REPORT_EXPLAIN(NotPresent, kCFGDescription,
+                              "Control Flow Guard requires functional ASLR.");
+    }
+
     if (dllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_GUARD_CF) {
         return REPORT(Present, kCFGDescription);
     } else {
@@ -274,8 +266,7 @@ const MitigationReport Checksec::isRFG() const {
 
     // https://xlab.tencent.com/en/2016/11/02/return-flow-guard/
     if ((loadConfigGuardFlags_ & 0x00020000) &&
-        (loadConfigGuardFlags_ & 0x00040000 ||
-         loadConfigGuardFlags_ & 0x00080000)) {
+        (loadConfigGuardFlags_ & 0x00040000 || loadConfigGuardFlags_ & 0x00080000)) {
         return REPORT(Present, kRFGDescription);
     } else {
         return REPORT(NotPresent, kRFGDescription);
@@ -284,21 +275,18 @@ const MitigationReport Checksec::isRFG() const {
 
 const MitigationReport Checksec::isSafeSEH() const {
     if (targetMachine_ != peparse::IMAGE_FILE_MACHINE_I386) {
-        return REPORT_EXPLAIN(
-            NotApplicable, kSafeSEHDescription,
-            "The SafeSEH mitigation only applies to x86_32 binaries.");
+        return REPORT_EXPLAIN(NotApplicable, kSafeSEHDescription,
+                              "The SafeSEH mitigation only applies to x86_32 binaries.");
     }
 
     // NOTE(ww): a load config under 112 bytes implies the absence of the
     // SafeSEH fields.
     if (loadConfigSize_ < 112) {
-        return REPORT_EXPLAIN(
-            NotPresent, kSafeSEHDescription,
-            "Image load config is too short to contain a SE handler table.");
+        return REPORT_EXPLAIN(NotPresent, kSafeSEHDescription,
+                              "Image load config is too short to contain a SE handler table.");
     }
 
-    if (isSEH() && loadConfigSEHandlerTable_ != 0 &&
-        loadConfigSEHandlerCount_ != 0) {
+    if (isSEH() && loadConfigSEHandlerTable_ != 0 && loadConfigSEHandlerCount_ != 0) {
         return REPORT(Present, kSafeSEHDescription);
     } else {
         return REPORT(NotPresent, kSafeSEHDescription);
@@ -309,9 +297,8 @@ const MitigationReport Checksec::isGS() const {
     // NOTE(ww): a load config under 96 bytes implies the absence of the
     // SecurityCookie field.
     if (loadConfigSize_ < 96) {
-        return REPORT_EXPLAIN(
-            NotPresent, kGSDescription,
-            "Image load config is too short to contain a GS security cookie.");
+        return REPORT_EXPLAIN(NotPresent, kGSDescription,
+                              "Image load config is too short to contain a GS security cookie.");
     }
 
     if (loadConfigSecurityCookie_ != 0) {
@@ -331,26 +318,19 @@ const MitigationReport Checksec::isDotNET() const {
 
 std::ostream& operator<<(std::ostream& os, Checksec& self) {
     json j = self.operator json();
-    os << "Dynamic Base    : " << j["mitigations"]["dynamicBase"]["presence"]
-       << "\n";
+    os << "Dynamic Base    : " << j["mitigations"]["dynamicBase"]["presence"] << "\n";
     os << "ASLR            : " << j["mitigations"]["aslr"]["presence"] << "\n";
-    os << "High Entropy VA : " << j["mitigations"]["highEntropyVA"]["presence"]
-       << "\n";
-    os << "Force Integrity : " << j["mitigations"]["forceIntegrity"]["presence"]
-       << "\n";
-    os << "Isolation       : " << j["mitigations"]["isolation"]["presence"]
-       << "\n";
+    os << "High Entropy VA : " << j["mitigations"]["highEntropyVA"]["presence"] << "\n";
+    os << "Force Integrity : " << j["mitigations"]["forceIntegrity"]["presence"] << "\n";
+    os << "Isolation       : " << j["mitigations"]["isolation"]["presence"] << "\n";
     os << "NX              : " << j["mitigations"]["nx"]["presence"] << "\n";
     os << "SEH             : " << j["mitigations"]["seh"]["presence"] << "\n";
     os << "CFG             : " << j["mitigations"]["cfg"]["presence"] << "\n";
     os << "RFG             : " << j["mitigations"]["rfg"]["presence"] << "\n";
-    os << "SafeSEH         : " << j["mitigations"]["safeSEH"]["presence"]
-       << "\n";
+    os << "SafeSEH         : " << j["mitigations"]["safeSEH"]["presence"] << "\n";
     os << "GS              : " << j["mitigations"]["gs"]["presence"] << "\n";
-    os << "Authenticode    : " << j["mitigations"]["authenticode"]["presence"]
-       << "\n";
-    os << ".NET            : " << j["mitigations"]["dotNET"]["presence"]
-       << "\n";
+    os << "Authenticode    : " << j["mitigations"]["authenticode"]["presence"] << "\n";
+    os << ".NET            : " << j["mitigations"]["dotNET"]["presence"] << "\n";
     return os;
 }
 
