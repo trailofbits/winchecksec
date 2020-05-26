@@ -14,16 +14,16 @@ add_compile_definitions(WINCHECKSEC_VERSION="${WINCHECKSEC_VERSION}")
 
 add_library(winchecksec checksec.cpp)
 target_include_directories(
-  winchecksec
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+  winchecksec PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                     $<INSTALL_INTERFACE:include>
 )
 target_compile_definitions(winchecksec PRIVATE _WINCHECKSEC_EXPORT=1)
 target_link_libraries(winchecksec PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
 
 add_executable(winchecksec-bin checksec.cpp main.cpp)
 target_include_directories(
-  winchecksec-bin
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+  winchecksec-bin PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include>
 )
 target_compile_definitions(winchecksec-bin PRIVATE _WINCHECKSEC_STANDALONE=1)
 target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
