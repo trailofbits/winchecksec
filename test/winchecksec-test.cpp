@@ -93,16 +93,25 @@ TEST(Winchecksec, NX64) {
 }
 
 TEST(Winchecksec, CFG32) {
-    // By default, modern PEs support CFG.
+    // By default, modern PEs do not support CFG.
     {
         auto *path = WINCHECKSEC_TEST_ASSETS "/32/pegoat.exe";
+
+        auto checksec = checksec::Checksec(path);
+
+        EXPECT_FALSE(checksec.isCFG());
+    }
+
+    // ...but it can be enabled.
+    {
+        auto *path = WINCHECKSEC_TEST_ASSETS "/32/pegoat-yes-cfg.exe";
 
         auto checksec = checksec::Checksec(path);
 
         EXPECT_TRUE(checksec.isCFG());
     }
 
-    // ...but it can be disabled.
+    // ...or explicitly disabled.
     {
         auto *path = WINCHECKSEC_TEST_ASSETS "/32/pegoat-no-cfg.exe";
 
@@ -113,16 +122,25 @@ TEST(Winchecksec, CFG32) {
 }
 
 TEST(Winchecksec, CFG64) {
-    // By default, modern PEs support CFG.
+    // By default, modern PEs do not support CFG.
     {
         auto *path = WINCHECKSEC_TEST_ASSETS "/64/pegoat.exe";
+
+        auto checksec = checksec::Checksec(path);
+
+        EXPECT_FALSE(checksec.isCFG());
+    }
+
+    // ...but it can be enabled.
+    {
+        auto *path = WINCHECKSEC_TEST_ASSETS "/64/pegoat-yes-cfg.exe";
 
         auto checksec = checksec::Checksec(path);
 
         EXPECT_TRUE(checksec.isCFG());
     }
 
-    // ...but it can be disabled.
+    // ...or explicitly disabled.
     {
         auto *path = WINCHECKSEC_TEST_ASSETS "/64/pegoat-no-cfg.exe";
 
