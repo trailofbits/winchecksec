@@ -53,8 +53,13 @@ jobs:
           cmake \
             -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
             -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            -DBUILD_TESTS=1 \
             ..
           cmake --build .
+
+      - name: tests
+        working-directory: build
+        run: ./test/uthenticode_test
 
       - name: archive
         if: github.event.release
@@ -98,8 +103,14 @@ jobs:
           -G "Visual Studio 16 2019" \
           -A ${{ matrix.build-arch.arch }} \
           -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+          -DBUILD_TESTS=1 \
           ..
         cmake --build . --config ${{ matrix.build-type }}
+
+    - name: tests
+      working-directory: build
+      run: |
+        ./test/${{ matrix.build-type }}/uthenticode_test
 
     - name: archive
       if: |
