@@ -110,6 +110,10 @@ auto-format it locally:
 $ make clang-format
 ```
 
+`winchecksec` also comes with a suite of unit tests that use
+[pegoat](https://github.com/trailofbits/pegoat) as a reference for various security mitigations.
+To build the unit tests, pass `-DBUILD_TESTS=1` to the CMake build.
+
 ## Statistics for different flags across EXEs on Windows 10
 
 Prevalence of various security features on a vanilla Windows 10 (1803) installation:
