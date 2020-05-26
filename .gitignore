@@ -39,3 +39,6 @@ doc/
 
 # macOS cruft
 .DS_Store
+
+# Don't ignore test assets
+!test/assets/*.exe
