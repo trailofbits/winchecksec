@@ -9,10 +9,10 @@ ALL_SRCS := $(shell \
 
 ALL_LISTFILES := $(shell \
 	find . -type f \
-	-path './build/*' \
-	-prune -o \
-	\( -name 'CMakeLists.txt' -o -name '*.cmake' \) \
-	-print \
+		-path './build/*' \
+		-prune -o \
+		\( -name 'CMakeLists.txt' -o -name '*.cmake' \) \
+		-print \
 )
 
 VERSION := $(shell cat VERSION)
