@@ -12,13 +12,68 @@ file(READ "${PROJECT_SOURCE_DIR}/VERSION" WINCHECKSEC_VERSION)
 string(STRIP "${WINCHECKSEC_VERSION}" WINCHECKSEC_VERSION)
 add_compile_definitions(WINCHECKSEC_VERSION="${WINCHECKSEC_VERSION}")
 
-add_library(winchecksec Checksec.cc Checksec.h)
+add_library(winchecksec checksec.cpp)
+target_include_directories(
+  winchecksec
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+)
 target_compile_definitions(winchecksec PRIVATE _WINCHECKSEC_EXPORT=1)
 target_link_libraries(winchecksec PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
 
-add_executable(winchecksec-bin Checksec.cc main.cc)
+add_executable(winchecksec-bin checksec.cpp main.cpp)
+target_include_directories(
+  winchecksec-bin
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>
+)
 target_compile_definitions(winchecksec-bin PRIVATE _WINCHECKSEC_STANDALONE=1)
 target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
 
 # Dumb hack to build an executable with the same name.
 set_target_properties(winchecksec-bin PROPERTIES OUTPUT_NAME winchecksec)
+
+# gtest setup. Adapted roughly from the googletest README.
+if (BUILD_TESTS)
+  set(gtest_cmake_in "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gtest.cmake.in")
+  set(gtest_cmake "${CMAKE_CURRENT_BINARY_DIR}/googletest-download/CMakeLists.txt")
+  configure_file("${gtest_cmake_in}" "${gtest_cmake}")
+
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download
+  )
+
+  if (result)
+    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+  endif ()
+
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} --build .
+    RESULT_VARIABLE result
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download
+  )
+
+  if (result)
+    message(FATAL_ERROR "Build step for googletest failed: ${result}")
+  endif ()
+
+  # Prevent overriding the parent project's compiler/linker settings on Windows
+  set(gtest_force_shared_crt
+      ON
+      CACHE BOOL "" FORCE
+  )
+
+  # Add googletest directly to our build. This defines the gtest and gtest_main targets.
+  add_subdirectory(
+    ${CMAKE_CURRENT_BINARY_DIR}/googletest-src ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+    EXCLUDE_FROM_ALL
+  )
+
+  # The gtest/gtest_main targets carry header search path dependencies automatically when using
+  # CMake 2.8.11 or later. Otherwise we have to add them here ourselves.
+  if (CMAKE_VERSION VERSION_LESS 2.8.11)
+    include_directories("${gtest_SOURCE_DIR}/include")
+  endif ()
+
+  add_subdirectory(test)
+endif ()

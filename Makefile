@@ -1,5 +1,5 @@
 CLANG_FORMAT := clang-format
-ALL_SRCS := $(wildcard *.cc) $(wildcard *.h)
+ALL_SRCS := $(wildcard *.cpp) $(wildcard *.h)
 VERSION := $(shell cat VERSION)
 
 .PHONY: all
