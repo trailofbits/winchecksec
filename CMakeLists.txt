@@ -5,6 +5,10 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 find_package(pe-parse REQUIRED)
 find_package(uthenticode REQUIRED)
 
+if(MSVC)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -17,7 +21,6 @@ target_include_directories(
   winchecksec PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                      $<INSTALL_INTERFACE:include>
 )
-target_compile_definitions(winchecksec PRIVATE _WINCHECKSEC_EXPORT=1)
 target_link_libraries(winchecksec PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
 
 add_executable(winchecksec-bin checksec.cpp main.cpp)
@@ -25,7 +28,6 @@ target_include_directories(
   winchecksec-bin PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include>
 )
-target_compile_definitions(winchecksec-bin PRIVATE _WINCHECKSEC_STANDALONE=1)
 target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
 
 # Dumb hack to build an executable with the same name.
