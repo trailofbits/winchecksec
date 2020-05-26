@@ -36,3 +36,6 @@ build/
 
 # Doxygen builds
 doc/
+
+# macOS cruft
+.DS_Store
