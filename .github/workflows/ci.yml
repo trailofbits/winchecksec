@@ -59,7 +59,7 @@ jobs:
 
       - name: tests
         working-directory: build
-        run: ./test/uthenticode_test
+        run: ./test/winchecksec_test
 
       - name: archive
         if: github.event.release
@@ -110,7 +110,7 @@ jobs:
     - name: tests
       working-directory: build
       run: |
-        ./test/${{ matrix.build-type }}/uthenticode_test
+        ./test/${{ matrix.build-type }}/winchecksec_test
 
     - name: archive
       if: |
