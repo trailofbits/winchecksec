@@ -1,5 +1,20 @@
 CLANG_FORMAT := clang-format
-ALL_SRCS := $(wildcard *.cc) $(wildcard *.h)
+ALL_SRCS := $(shell \
+	find . -type f \
+		\( -path './build/*' -o -path './include/vendor/*' \) \
+		-prune -o \
+		\( -name '*.cpp' -o -name '*.h' \) \
+		-print \
+)
+
+ALL_LISTFILES := $(shell \
+	find . -type f \
+		-path './build/*' \
+		-prune -o \
+		\( -name 'CMakeLists.txt' -o -name '*.cmake' \) \
+		-print \
+)
+
 VERSION := $(shell cat VERSION)
 
 .PHONY: all
@@ -16,7 +31,7 @@ clang-format:
 
 .PHONY: cmake-format
 cmake-format:
-	cmake-format -i CMakeLists.txt
+	cmake-format -i $(ALL_LISTFILES)
 	git diff --exit-code
 
 .PHONY: doc

@@ -1,4 +1,4 @@
-#include "Checksec.h"
+#include "checksec.h"
 
 #include <parser-library/parse.h>
 #include <uthenticode.h>

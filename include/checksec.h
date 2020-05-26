@@ -1,21 +1,5 @@
 #pragma once
 
-// clang-format off
-#ifdef _WIN32
-    #ifdef _WINCHECKSEC_STANDALONE
-        #define EXPORT
-    #else
-        #ifdef _WINCHECKSEC_EXPORT
-          #define EXPORT __declspec(dllexport)
-        #else
-          #define EXPORT __declspec(dllimport)
-        #endif
-    #endif
-#else
-    #define EXPORT
-#endif
-// clang-format on
-
 #include <iostream>
 #include <string>
 #include <optional>
@@ -30,7 +14,7 @@ namespace checksec {
 /**
  * Raised on Checksec instantiation in the event of malformed or invalid PE.
  */
-class EXPORT ChecksecError : public std::runtime_error {
+class ChecksecError : public std::runtime_error {
    public:
     ChecksecError(const char* what) : std::runtime_error(what) {}
 };
@@ -118,7 +102,7 @@ class LoadedImage {
  *
  * Every mitigation supported by winchecksec is in one of these states.
  */
-enum class EXPORT MitigationPresence {
+enum class MitigationPresence {
     Present,        /**< The mitigation is present */
     NotPresent,     /**< The mitigation is not present */
     NotApplicable,  /**< The mitigation is not applicable on this input */
@@ -128,7 +112,7 @@ enum class EXPORT MitigationPresence {
 /**
  * Represents a "report" on a particular security mitigation.
  */
-struct EXPORT MitigationReport {
+struct MitigationReport {
     /**
      * A MitigationPresence indicating the mitigation's state.
      */
@@ -153,7 +137,7 @@ struct EXPORT MitigationReport {
 /**
  * Represents the main winchecksec interface.
  */
-class EXPORT Checksec {
+class Checksec {
    public:
     Checksec(std::string filepath);
 
