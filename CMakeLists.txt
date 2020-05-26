@@ -5,9 +5,9 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 find_package(pe-parse REQUIRED)
 find_package(uthenticode REQUIRED)
 
-if(MSVC)
+if (MSVC)
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
+endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
