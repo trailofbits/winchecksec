@@ -21,11 +21,11 @@ The following security features are currently detected:
 
 ## Building
 
-`winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse), which can be
-installed via `vcpkg`:
+`winchecksec` depends on [pe-parse](https://github.com/trailofbits/pe-parse) and
+[uthenticode](https://github.com/trailofbits/uthenticode), which can be installed via `vcpkg`:
 
 ```bash
-$ vcpkg install pe-parse
+$ vcpkg install pe-parse uthenticode
 ```
 
 ### Building on Linux
