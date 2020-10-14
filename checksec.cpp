@@ -6,6 +6,7 @@
 #include <ostream>
 #include <vector>
 #include <optional>
+#include <string>
 
 #include "vendor/json.hpp"
 using json = nlohmann::json;
@@ -159,6 +160,65 @@ Checksec::operator json() const {
         },
         {"path", filepath_},
     };
+}
+
+const std::string Checksec::detailedReport() const {
+    json j = toJson();
+    std::string s = "";
+    std::string sep = "";
+    std::vector<std::vector<std::string>> name_keys {
+        { "Dynamic Base"   , "dynamicBase" },
+        { "ASLR"           , "aslr" },
+        { "High Entropy VA", "highEntropyVA" },
+        { "Force Integrity", "forceIntegrity" },
+        { "Isolation"      , "isolation" },
+        { "NX"             , "nx" },
+        { "SEH"            , "seh" },
+        { "CFG"            , "cfg" },
+        { "RFG"            , "rfg" },
+        { "SafeSEH"        , "safeSEH" },
+        { "GS"             , "gs" },
+        { "Authenticode"   , "authenticode" },
+        { ".NET"           , "dotNET" },
+    };
+
+    for (std::vector<std::string> name_key: name_keys) {
+        std::string name = name_key[0];
+        std::string key = name_key[1];
+
+        s += sep;
+        sep = "\n";
+        s += "Mitigation:  " + name + "\n";
+        s += "Presence:    " + std::string(j["mitigations"][key]["presence"]) + "\n";
+
+        std::string word = "";
+        size_t col = 0;
+        size_t max = 54;
+        s += "Description: ";
+
+        for (char c: std::string(j["mitigations"][key]["description"])) {
+            if (c == ' ') {
+                if (word.length() + col > max) {
+                    s += "\n             ";
+                    col = word.length();
+                } else if (col == 0) {
+                    col = word.length();
+                } else {
+                    s += " ";
+                    col += word.length();
+                }
+                s += word;
+                word = std::string("");
+            } else {
+                word += c;
+            }
+        }
+        s += ' ' + word + "\n";
+        if (!j["mitigations"][key]["explanation"].is_null()) {
+            s += "Explanation: " + std::string(j["mitigations"][key]["explanation"]) + "\n";
+        }
+    }
+    return s;
 }
 
 const MitigationReport Checksec::isDynamicBase() const {

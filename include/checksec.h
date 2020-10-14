@@ -60,8 +60,9 @@ constexpr const char kAuthenticodeDescription[] =
     "Binaries with Authenticode signatures are verified at load time.";
 
 constexpr const char kRFGDescription[] =
-    "Binaries with RFG enabled have additional return-oriented-programming "
-    "protections.";
+    // https://www.techrepublic.com/article/windows-10-security-how-the-shadow-stack-will-help-to-keep-the-hackers-at-bay/
+    "(This was never released by Microsoft). Binaries with RFG enabled have "
+    "additional return-oriented-programming protections.";
 
 constexpr const char kSafeSEHDescription[] =
     "Binaries with SafeSEH enabled have additional protections for stack-based "
@@ -142,6 +143,8 @@ class Checksec {
     Checksec(std::string filepath);
 
     json toJson() const;
+
+    const std::string detailedReport() const;
 
     /**
      * @return a MitigationReport indicating whether the program can be loaded from a dynamic base
