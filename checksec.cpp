@@ -166,23 +166,23 @@ const std::string Checksec::detailedReport() const {
     json j = toJson();
     std::string s = "";
     std::string sep = "";
-    std::vector<std::vector<std::string>> name_keys {
-        { "Dynamic Base"   , "dynamicBase" },
-        { "ASLR"           , "aslr" },
-        { "High Entropy VA", "highEntropyVA" },
-        { "Force Integrity", "forceIntegrity" },
-        { "Isolation"      , "isolation" },
-        { "NX"             , "nx" },
-        { "SEH"            , "seh" },
-        { "CFG"            , "cfg" },
-        { "RFG"            , "rfg" },
-        { "SafeSEH"        , "safeSEH" },
-        { "GS"             , "gs" },
-        { "Authenticode"   , "authenticode" },
-        { ".NET"           , "dotNET" },
+    std::vector<std::vector<std::string>> name_keys{
+        {"Dynamic Base", "dynamicBase"},
+        {"ASLR", "aslr"},
+        {"High Entropy VA", "highEntropyVA"},
+        {"Force Integrity", "forceIntegrity"},
+        {"Isolation", "isolation"},
+        {"NX", "nx"},
+        {"SEH", "seh"},
+        {"CFG", "cfg"},
+        {"RFG", "rfg"},
+        {"SafeSEH", "safeSEH"},
+        {"GS", "gs"},
+        {"Authenticode", "authenticode"},
+        {".NET", "dotNET"},
     };
 
-    for (std::vector<std::string> name_key: name_keys) {
+    for (std::vector<std::string> name_key : name_keys) {
         std::string name = name_key[0];
         std::string key = name_key[1];
 
@@ -196,7 +196,7 @@ const std::string Checksec::detailedReport() const {
         size_t max = 54;
         s += "Description: ";
 
-        for (char c: std::string(j["mitigations"][key]["description"])) {
+        for (char c : std::string(j["mitigations"][key]["description"])) {
             if (c == ' ') {
                 if (word.length() + col > max) {
                     s += "\n             ";
