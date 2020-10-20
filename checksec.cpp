@@ -85,14 +85,14 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
                       << "\n";
             return;
         }
-        peparse::image_load_config_64 loadConfig;
+        peparse::image_load_config_64 loadConfig{};
         if (loadConfigData.size() > sizeof(loadConfig)) {
             std::cerr << "Warn: large load config, probably contains undocumented "
                          "fields"
                       << "\n";
         }
         memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
-        loadConfigSize_ = loadConfig.Size;
+        loadConfigSize_ = loadConfigData.size();
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
@@ -120,14 +120,14 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
                       << "\n";
             return;
         }
-        peparse::image_load_config_32 loadConfig;
+        peparse::image_load_config_32 loadConfig{};
         if (loadConfigData.size() > sizeof(loadConfig)) {
             std::cerr << "Warn: large load config, probably contains undocumented "
                          "fields"
                       << "\n";
         }
         memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
-        loadConfigSize_ = loadConfig.Size;
+        loadConfigSize_ = loadConfigData.size();
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
