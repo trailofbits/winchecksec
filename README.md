@@ -54,7 +54,7 @@ $ ./build/winchecksec
 
 As a command-line tool, `winchecksec` has two output modes: a plain-text mode for easy reading,
 and a JSON mode for consumption in other programs. The plain-text mode is the default; JSON output
-is enabled by passing `-j`:
+is enabled by passing `--json` or `-j`:
 
 ```cmd
 > .\Release\winchecksec.exe C:\Windows\notepad.exe
@@ -75,7 +75,7 @@ Authenticode    : "NotPresent"
 
 > .\Release\winchecksec.exe -j C:\Windows\notepad.exe
 
-{
+[{
    "path": "C:\\Windows\\notepad.exe",
    "mitigations": {
       "dynamicBase": {
@@ -92,11 +92,8 @@ Authenticode    : "NotPresent"
       },
       // ...
    }
-}
+}]
 ```
-
-The `winchecksec` CLI only takes one file at a time. To run it on multiple files or entire directories,
-wrap it in a loop.
 
 `winchecksec` also provides a C++ API; documentation is hosted
 [here](https://trailofbits.github.io/winchecksec/).

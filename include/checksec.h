@@ -224,7 +224,6 @@ class Checksec {
      */
     const MitigationReport isDotNET() const;
 
-    operator json() const;
     friend std::ostream& operator<<(std::ostream& os, Checksec&);
 
    private:

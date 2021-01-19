@@ -42,3 +42,6 @@ doc/
 
 # Don't ignore test assets
 !test/assets/**/*.exe
+
+# vcpkg
+vcpkg/
