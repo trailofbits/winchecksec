@@ -13,7 +13,7 @@ on:
     - cron:  '0 12 * * *'
 
 env:
-  vcpkg-commit: 79d9a154d9631093f507da4b0032e5737606efaa
+  vcpkg-commit: 0c94afc7883faee9f188c36232d628ffa94cf27f
   vcpkg-install: pe-parse uthenticode
 
 jobs:
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Restore from cache and install vcpkg
-        uses: lukka/run-vcpkg@v5
+        uses: lukka/run-vcpkg@v6
         with:
           vcpkgGitCommitId: ${{ env.vcpkg-commit }}
           vcpkgArguments: ${{ env.vcpkg-install }}
