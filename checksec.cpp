@@ -3,54 +3,16 @@
 #include <parser-library/parse.h>
 #include <uthenticode.h>
 
+#include <cstring>
 #include <ostream>
 #include <vector>
 #include <optional>
-
-#include "vendor/json.hpp"
-using json = nlohmann::json;
 
 #define REPORT_EXPLAIN(presence, description, explanation) \
     { MitigationPresence::presence, impl::description, explanation }
 #define REPORT(presence, description) REPORT_EXPLAIN(presence, description, std::nullopt)
 
 namespace checksec {
-
-void to_json(json& j, const MitigationPresence& p) {
-    switch (p) {
-        default: {
-            j = "Unknown";
-            break;
-        }
-        case MitigationPresence::Present: {
-            j = "Present";
-            break;
-        }
-        case MitigationPresence::NotPresent: {
-            j = "NotPresent";
-            break;
-        }
-        case MitigationPresence::NotApplicable: {
-            j = "NotApplicable";
-            break;
-        }
-        case MitigationPresence::NotImplemented: {
-            j = "NotImplemented";
-            break;
-        }
-    }
-}
-
-void to_json(json& j, const MitigationReport& r) {
-    j = {
-        {"presence", r.presence},
-        {"description", r.description},
-    };
-
-    if (r.explanation) {
-        j["explanation"] = r.explanation.value();
-    }
-}
 
 Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(filepath) {
     peparse::nt_header_32 nt = loadedImage_.get()->peHeader.nt;
@@ -133,31 +95,6 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
         loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
     }
-}
-
-json Checksec::toJson() const {
-    return json{
-        {
-            "mitigations",
-            {
-                {"dynamicBase", isDynamicBase()},
-                {"aslr", isASLR()},
-                {"highEntropyVA", isHighEntropyVA()},
-                {"forceIntegrity", isForceIntegrity()},
-                {"isolation", isIsolation()},
-                {"nx", isNX()},
-                {"seh", isSEH()},
-                {"cfg", isCFG()},
-                {"rfg", isRFG()},
-                {"safeSEH", isSafeSEH()},
-                {"gs", isGS()},
-                {"authenticode", isAuthenticode()},
-                {"dotNET", isDotNET()},
-            },
-        },
-        {"path", filepath_},
-    };
-    ;
 }
 
 const MitigationReport Checksec::isDynamicBase() const {
@@ -317,24 +254,6 @@ const MitigationReport Checksec::isDotNET() const {
     } else {
         return REPORT(NotPresent, kDotNETDescription);
     }
-}
-
-std::ostream& operator<<(std::ostream& os, Checksec& self) {
-    json j = self.toJson();
-    os << "Dynamic Base    : " << j["mitigations"]["dynamicBase"]["presence"] << "\n";
-    os << "ASLR            : " << j["mitigations"]["aslr"]["presence"] << "\n";
-    os << "High Entropy VA : " << j["mitigations"]["highEntropyVA"]["presence"] << "\n";
-    os << "Force Integrity : " << j["mitigations"]["forceIntegrity"]["presence"] << "\n";
-    os << "Isolation       : " << j["mitigations"]["isolation"]["presence"] << "\n";
-    os << "NX              : " << j["mitigations"]["nx"]["presence"] << "\n";
-    os << "SEH             : " << j["mitigations"]["seh"]["presence"] << "\n";
-    os << "CFG             : " << j["mitigations"]["cfg"]["presence"] << "\n";
-    os << "RFG             : " << j["mitigations"]["rfg"]["presence"] << "\n";
-    os << "SafeSEH         : " << j["mitigations"]["safeSEH"]["presence"] << "\n";
-    os << "GS              : " << j["mitigations"]["gs"]["presence"] << "\n";
-    os << "Authenticode    : " << j["mitigations"]["authenticode"]["presence"] << "\n";
-    os << ".NET            : " << j["mitigations"]["dotNET"]["presence"] << "\n";
-    return os;
 }
 
 }  // namespace checksec
