@@ -4,11 +4,11 @@
 using namespace std;
 
 void usage(char* argv[]) {
-    std::cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>"
+    std::cerr << "Syntax : " << argv[0] << " [--json] <file [file ...]>"
               << "\n";
-    std::cerr << "Example: " << argv[0] << " -j doom2.exe"
+    std::cerr << "Example: " << argv[0] << " --json doom2.exe"
               << "\n";
-    std::cerr << "  -j will output json to stdout "
+    std::cerr << "  -j/--json will output JSON to stdout"
               << "\n";
 }
 
