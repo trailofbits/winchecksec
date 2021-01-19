@@ -1,68 +1,58 @@
 #include "checksec.h"
+#include "vendor/argh.h"
 
 using namespace std;
 
 void usage(char* argv[]) {
-    cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>"
-         << "\n";
-    cerr << "Example: " << argv[0] << " -j doom2.exe"
-         << "\n";
-    cerr << "  -j will output json to stdout "
-         << "\n";
+    std::cerr << "Syntax : " << argv[0] << " [-j] <dll|exe>"
+              << "\n";
+    std::cerr << "Example: " << argv[0] << " -j doom2.exe"
+              << "\n";
+    std::cerr << "  -j will output json to stdout "
+              << "\n";
 }
 
-void version() { cerr << "Winchecksec version " << WINCHECKSEC_VERSION << "\n"; }
+void version() { std::cerr << "Winchecksec version " << WINCHECKSEC_VERSION << "\n"; }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2 && argc != 3) {
-        cerr << "Unexpected number of arguments"
-             << "\n";
-        usage(argv);
-        return -__LINE__;
+    argh::parser cmdl(argc, argv);
+
+    if (cmdl[{"-V", "--version"}]) {
+        version();
+        return 0;
     }
 
-    bool jsonOutput = false;
-    string path;
+    bool json = cmdl[{"-j", "--json"}];
+    if (cmdl.size() < 2) {
+        usage(argv);
+        return 1;
+    }
 
-    switch (argc) {
-        case 2:
-            if (string(argv[1]) == "-V") {
-                version();
-                return 0;
-            }
-            path = argv[1];
-            break;
-        case 3:
-            if (string(argv[1]) == "-j") {
-                jsonOutput = true;
-                path = argv[2];
+    // TODO(ww): https://github.com/adishavit/argh/issues/57
+    auto results = json::array();
+    for (auto path = std::next(cmdl.begin()); path != cmdl.end(); ++path) {
+        try {
+            checksec::Checksec csec(*path);
+
+            if (json) {
+                results.push_back(csec.toJson());
             } else {
-                usage(argv);
-                return -__LINE__;
+                std::cout << "Results for: " << *path << '\n';
+                std::cout << csec << '\n';
             }
-            break;
-        default:
+        } catch (checksec::ChecksecError& error) {
+            std::cerr << error.what() << '\n';
             usage(argv);
-            return -__LINE__;
+            return 2;
+        } catch (...) {
+            std::cerr << "General error" << '\n';
+            usage(argv);
+            return 3;
+        }
     }
 
-    try {
-        checksec::Checksec csec = path;
-
-        if (jsonOutput) {
-            cout << csec.toJson() << "\n";
-        } else {
-            cout << csec << "\n";
-        }
-    } catch (checksec::ChecksecError& error) {
-        cerr << error.what() << "\n";
-        usage(argv);
-        return -__LINE__;
-    } catch (...) {
-        cerr << "General error"
-             << "\n";
-        usage(argv);
-        return -__LINE__;
+    if (json) {
+        std::cout << results << '\n';
     }
 
     return 0;

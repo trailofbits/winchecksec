@@ -1,7 +1,7 @@
 CLANG_FORMAT := clang-format
 ALL_SRCS := $(shell \
 	find . -type f \
-		\( -path './build/*' -o -path './include/vendor/*' \) \
+		\( -path './build/*' -o -path './include/vendor/*' -o -path './vcpkg/*' \) \
 		-prune -o \
 		\( -name '*.cpp' -o -name '*.h' \) \
 		-print \

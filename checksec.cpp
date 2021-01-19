@@ -135,9 +135,7 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
     }
 }
 
-json Checksec::toJson() const { return this->operator json(); }
-
-Checksec::operator json() const {
+json Checksec::toJson() const {
     return json{
         {
             "mitigations",
@@ -159,6 +157,7 @@ Checksec::operator json() const {
         },
         {"path", filepath_},
     };
+    ;
 }
 
 const MitigationReport Checksec::isDynamicBase() const {
@@ -321,7 +320,7 @@ const MitigationReport Checksec::isDotNET() const {
 }
 
 std::ostream& operator<<(std::ostream& os, Checksec& self) {
-    json j = self.operator json();
+    json j = self.toJson();
     os << "Dynamic Base    : " << j["mitigations"]["dynamicBase"]["presence"] << "\n";
     os << "ASLR            : " << j["mitigations"]["aslr"]["presence"] << "\n";
     os << "High Entropy VA : " << j["mitigations"]["highEntropyVA"]["presence"] << "\n";
