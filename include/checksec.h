@@ -6,9 +6,6 @@
 
 #include <parser-library/parse.h>
 
-#include "vendor/json.hpp"
-using json = nlohmann::json;
-
 namespace checksec {
 
 /**
@@ -141,7 +138,10 @@ class Checksec {
    public:
     Checksec(std::string filepath);
 
-    json toJson() const;
+    /**
+     * @return a string reference for the filepath that this `Checksec` instance was created with
+     */
+    const std::string filepath() const { return filepath_; }
 
     /**
      * @return a MitigationReport indicating whether the program can be loaded from a dynamic base
@@ -223,8 +223,6 @@ class Checksec {
      * @return a MitigationReport indicating whether this program runs in the .NET environment
      */
     const MitigationReport isDotNET() const;
-
-    friend std::ostream& operator<<(std::ostream& os, Checksec&);
 
    private:
     impl::LoadedImage loadedImage_;
