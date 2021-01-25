@@ -200,7 +200,7 @@ const MitigationReport Checksec::isRFG() const {
     // GuardFlags field. See:
     // https://docs.microsoft.com/en-us/windows/win32/debug/pe-format#load-configuration-layout
     if (loadConfigSize_ < 148 &&
-        !(imageCharacteristics_ == peparse::IMAGE_FILE_32BIT_MACHINE && loadConfigSize_ >= 92)) {
+        !(imageCharacteristics_ & peparse::IMAGE_FILE_32BIT_MACHINE && loadConfigSize_ >= 92)) {
         return REPORT_EXPLAIN(NotPresent, kRFGDescription,
                               "Image load config is too short to contain RFG "
                               "configuration fields.");
@@ -224,7 +224,7 @@ const MitigationReport Checksec::isSafeSEH() const {
     // NOTE(ww): a load config under 72/112 bytes implies the absence of the
     // SafeSEH fields.
     if (loadConfigSize_ < 112 &&
-        !(imageCharacteristics_ == peparse::IMAGE_FILE_32BIT_MACHINE && loadConfigSize_ >= 72)) {
+        !(imageCharacteristics_ & peparse::IMAGE_FILE_32BIT_MACHINE && loadConfigSize_ >= 72)) {
         return REPORT_EXPLAIN(NotPresent, kSafeSEHDescription,
                               "Image load config is too short to contain a SE handler table.");
     }
@@ -240,7 +240,7 @@ const MitigationReport Checksec::isGS() const {
     // NOTE(ww): a load config under 64/96 bytes implies the absence of the
     // SecurityCookie field.
     if (loadConfigSize_ < 96 &&
-        !(imageCharacteristics_ == peparse::IMAGE_FILE_32BIT_MACHINE && loadConfigSize_ >= 64)) {
+        !(imageCharacteristics_ & peparse::IMAGE_FILE_32BIT_MACHINE && loadConfigSize_ >= 64)) {
         return REPORT_EXPLAIN(NotPresent, kGSDescription,
                               "Image load config is too short to contain a GS security cookie.");
     }
