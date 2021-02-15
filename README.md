@@ -28,6 +28,13 @@ The following security features are currently detected:
 $ vcpkg install pe-parse uthenticode
 ```
 
+**NOTE**: On Windows, `vcpkg` defaults to 32-bit builds. If you're doing a 64-bit `winchecksec`
+build, you'll need to explicitly build the dependencies as 64-bit:
+
+```bash
+$ vcpkg install pe-parse:x64-windows uthenticode:x64-windows
+```
+
 ### Building on Linux
 ```bash
 $ git clone https://github.com/trailofbits/winchecksec.git
