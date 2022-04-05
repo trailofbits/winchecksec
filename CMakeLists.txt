@@ -21,14 +21,14 @@ target_include_directories(
   winchecksec PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                      $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(winchecksec PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
+target_link_libraries(winchecksec PRIVATE pe-parse::pe-parse uthenticode::uthenticode)
 
 add_executable(winchecksec-bin checksec.cpp main.cpp)
 target_include_directories(
   winchecksec-bin PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                          $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parser-library uthenticode::uthenticode)
+target_link_libraries(winchecksec-bin PRIVATE pe-parse::pe-parse uthenticode::uthenticode)
 
 # Dumb hack to build an executable with the same name.
 set_target_properties(winchecksec-bin PROPERTIES OUTPUT_NAME winchecksec)
