@@ -4,7 +4,7 @@
 #include <string>
 #include <optional>
 
-#include <parser-library/parse.h>
+#include <pe-parse/parse.h>
 
 namespace checksec {
 

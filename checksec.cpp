@@ -1,6 +1,6 @@
 #include "checksec.h"
 
-#include <parser-library/parse.h>
+#include <pe-parse/parse.h>
 #include <uthenticode.h>
 
 #include <cstring>
@@ -52,8 +52,12 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
             std::cerr << "Warn: large load config, probably contains undocumented "
                          "fields"
                       << "\n";
+        } else if (loadConfigData.size() < sizeof(loadConfig)) {
+            std::cerr << "Warn: undersized load config, probably missing fields"
+                      << "\n";
         }
-        memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
+        auto size = std::min(loadConfigData.size(), sizeof(loadConfig));
+        memcpy(&loadConfig, loadConfigData.data(), size);
         loadConfigSize_ = loadConfigData.size();
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
@@ -87,8 +91,12 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
             std::cerr << "Warn: large load config, probably contains undocumented "
                          "fields"
                       << "\n";
+        } else if (loadConfigData.size() < sizeof(loadConfig)) {
+            std::cerr << "Warn: undersized load config, probably missing fields"
+                      << "\n";
         }
-        memcpy(&loadConfig, loadConfigData.data(), sizeof(loadConfig));
+        auto size = std::min(loadConfigData.size(), sizeof(loadConfig));
+        memcpy(&loadConfig, loadConfigData.data(), size);
         loadConfigSize_ = loadConfigData.size();
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
