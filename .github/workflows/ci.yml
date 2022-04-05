@@ -100,7 +100,7 @@ jobs:
         mkdir build
         cd build
         cmake \
-          -G "Visual Studio 16 2019" \
+          -G "Visual Studio 17 2022" \
           -A ${{ matrix.build-arch.arch }} \
           -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
           -DBUILD_TESTS=1 \
