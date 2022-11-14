@@ -149,3 +149,11 @@ TEST(Winchecksec, CFG64) {
         EXPECT_FALSE(checksec.isCFG());
     }
 }
+
+TEST(Winchecksec, NoCetCompat64) {
+    auto *path = WINCHECKSEC_TEST_ASSETS "/64/pegoat-no-cetcompat.exe";
+
+    auto checksec = checksec::Checksec(path);
+
+    EXPECT_FALSE(checksec.isCetCompat());
+}

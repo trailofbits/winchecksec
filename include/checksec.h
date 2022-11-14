@@ -71,6 +71,10 @@ constexpr const char kGSDescription[] =
 constexpr const char kDotNETDescription[] =
     ".NET binaries run in a managed environment with many default mitigations.";
 
+constexpr const char kCetDescription[] =
+    "Binaries with cet compat support will use "
+    "the shadow stack (if available) to mitigate ROP.";
+
 /**
  * A RAII wrapped for `pe-parse::parsed_pe`.
  */
@@ -224,6 +228,11 @@ class Checksec {
      */
     const MitigationReport isDotNET() const;
 
+    /**
+     * @return a MitigationReport indicating whether this program is compiled with CET support
+     */
+    const MitigationReport isCetCompat() const;
+
    private:
     impl::LoadedImage loadedImage_;
     std::string filepath_;
@@ -236,6 +245,7 @@ class Checksec {
     std::uint64_t loadConfigSEHandlerCount_ = 0;
     std::uint64_t loadConfigSecurityCookie_ = 0;
     peparse::data_directory clrConfig_ = {0};
+    std::uint16_t extendedDllCharacteristics_ = 0;
 };
 
 }  // namespace checksec

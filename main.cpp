@@ -59,6 +59,7 @@ void to_json(json& j, const Checksec& c) {
                 {"gs", c.isGS()},
                 {"authenticode", c.isAuthenticode()},
                 {"dotNET", c.isDotNET()},
+                {"CetCompat", c.isCetCompat()},
             },
         },
         {"path", c.filepath()},
@@ -80,6 +81,7 @@ std::ostream& operator<<(std::ostream& os, Checksec& self) {
     os << "GS              : " << j["mitigations"]["gs"]["presence"] << "\n";
     os << "Authenticode    : " << j["mitigations"]["authenticode"]["presence"] << "\n";
     os << ".NET            : " << j["mitigations"]["dotNET"]["presence"] << "\n";
+    os << "CET Compatible  : " << j["mitigations"]["CetCompat"]["presence"] << "\n";
     return os;
 }
 }  // namespace checksec
