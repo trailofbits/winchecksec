@@ -21,6 +21,7 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
     targetMachine_ = imageFileHeader->Machine;
     imageCharacteristics_ = imageFileHeader->Characteristics;
     std::vector<std::uint8_t> loadConfigData;
+    std::vector<std::uint8_t> debugDirectories;
 
     // Check whether we need a 32 or 32+ optional header.
     if (nt.OptionalMagic == peparse::NT_OPTIONAL_64_MAGIC) {
@@ -63,6 +64,39 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
         loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
+
+        // Iterate over debug directories
+        if (!peparse::GetDataDirectoryEntry(loadedImage_.get(), peparse::DIR_DEBUG,
+                                            debugDirectories)) {
+            std::cerr << "Warn: No debug directories"
+                      << "\n";
+            return;
+        }
+
+        peparse::debug_dir_entry debugDir{};
+        uint32_t numberOfDebugDirs = debugDirectories.size() / sizeof(debugDir);
+        auto debugDirSize = std::min(debugDirectories.size(), sizeof(debugDir));
+
+        for (int i = 0; i < numberOfDebugDirs; i++) {
+            // copy the current debug directory into debugDir
+            memcpy(&debugDir, debugDirectories.data() + (i * debugDirSize), debugDirSize);
+            // 20 == IMAGE_DEBUG_TYPE_EX_DLLCHARACTERISTICS
+            // For now we only care about this debug directory since it contains the CETCOMPAT bit
+            if (debugDir.Type == 20) {
+                if (debugDir.PointerToRawData != 0) {
+                    auto dataPtr = debugDir.PointerToRawData + loadedImage_.get()->fileBuffer->buf;
+                    if ((dataPtr < loadedImage_.get()->fileBuffer->buf) ||
+                        (dataPtr > loadedImage_.get()->fileBuffer->buf +
+                                       loadedImage_.get()->fileBuffer->bufLen)) {
+                        std::cerr << "Warn: dataPtr is out of bounds"
+                                  << "\n";
+                        extendedDllCharacteristics_ = 0;
+                        return;
+                    }
+                    extendedDllCharacteristics_ = *((uint16_t*)dataPtr);
+                }
+            }
+        }
     } else {
         peparse::optional_header_32* optionalHeader = &(nt.OptionalHeader);
         dllCharacteristics_ = optionalHeader->DllCharacteristics;
@@ -102,6 +136,35 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
         loadConfigSEHandlerCount_ = loadConfig.SEHandlerCount;
+
+        if (!peparse::GetDataDirectoryEntry(loadedImage_.get(), peparse::DIR_DEBUG,
+                                            debugDirectories)) {
+            std::cerr << "Warn: No debug directories"
+                      << "\n";
+            return;
+        }
+
+        peparse::debug_dir_entry debugDir{};
+        auto numberOfDebugDirs = debugDirectories.size() / sizeof(debugDir);
+        auto debugDirSize = std::min(debugDirectories.size(), sizeof(debugDir));
+
+        for (int i = 0; i < numberOfDebugDirs; i++) {
+            memcpy(&debugDir, debugDirectories.data() + (i * debugDirSize), debugDirSize);
+            if (debugDir.Type == 20) {
+                if (debugDir.PointerToRawData != 0) {
+                    auto dataPtr = debugDir.PointerToRawData + loadedImage_.get()->fileBuffer->buf;
+                    if ((dataPtr < loadedImage_.get()->fileBuffer->buf) ||
+                        (dataPtr > loadedImage_.get()->fileBuffer->buf +
+                                       loadedImage_.get()->fileBuffer->bufLen)) {
+                        std::cerr << "Warn: dataPtr is out of bounds"
+                                  << "\n";
+                        extendedDllCharacteristics_ = 0;
+                        return;
+                    }
+                    extendedDllCharacteristics_ = *((uint16_t*)dataPtr);
+                }
+            }
+        }
     }
 }
 
@@ -265,6 +328,14 @@ const MitigationReport Checksec::isDotNET() const {
         return REPORT(Present, kDotNETDescription);
     } else {
         return REPORT(NotPresent, kDotNETDescription);
+    }
+}
+
+const MitigationReport Checksec::isCetCompat() const {
+    if (extendedDllCharacteristics_ & peparse::IMAGE_DLLCHARACTERISTICS_EX_CET_COMPAT) {
+        return REPORT(Present, kCetDescription);
+    } else {
+        return REPORT(NotPresent, kCetDescription);
     }
 }
 
