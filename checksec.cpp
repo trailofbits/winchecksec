@@ -85,11 +85,15 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
             if (debugDir.Type == 20) {
                 if (debugDir.PointerToRawData != 0) {
                     auto dataPtr = debugDir.PointerToRawData + loadedImage_.get()->fileBuffer->buf;
-                    try {
-                        extendedDllCharacteristics_ = *((uint16_t*)dataPtr);
-                    } catch (...) {
+                    if ((dataPtr < loadedImage_.get()->fileBuffer->buf) ||
+                        (dataPtr > loadedImage_.get()->fileBuffer->buf +
+                                       loadedImage_.get()->fileBuffer->bufLen)) {
+                        std::cerr << "Warn: dataPtr is out of bounds"
+                                  << "\n";
                         extendedDllCharacteristics_ = 0;
+                        return;
                     }
+                    extendedDllCharacteristics_ = *((uint16_t*)dataPtr);
                 }
             }
         }
@@ -149,11 +153,15 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
             if (debugDir.Type == 20) {
                 if (debugDir.PointerToRawData != 0) {
                     auto dataPtr = debugDir.PointerToRawData + loadedImage_.get()->fileBuffer->buf;
-                    try {
-                        extendedDllCharacteristics_ = *((uint16_t*)dataPtr);
-                    } catch (...) {
+                    if ((dataPtr < loadedImage_.get()->fileBuffer->buf) ||
+                        (dataPtr > loadedImage_.get()->fileBuffer->buf +
+                                       loadedImage_.get()->fileBuffer->bufLen)) {
+                        std::cerr << "Warn: dataPtr is out of bounds"
+                                  << "\n";
                         extendedDllCharacteristics_ = 0;
+                        return;
                     }
+                    extendedDllCharacteristics_ = *((uint16_t*)dataPtr);
                 }
             }
         }

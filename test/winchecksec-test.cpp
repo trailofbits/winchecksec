@@ -157,3 +157,11 @@ TEST(Winchecksec, NoCetCompat64) {
 
     EXPECT_FALSE(checksec.isCetCompat());
 }
+
+TEST(Winchecksec, CetCompat64) {
+    auto *path = WINCHECKSEC_TEST_ASSETS "/64/pegoat-cetcompat.exe";
+
+    auto checksec = checksec::Checksec(path);
+
+    EXPECT_TRUE(checksec.isCetCompat());
+}
