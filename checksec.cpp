@@ -60,6 +60,20 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
         auto size = std::min(loadConfigData.size(), sizeof(loadConfig));
         memcpy(&loadConfig, loadConfigData.data(), size);
         loadConfigSize_ = loadConfigData.size();
+        if ((loadConfig.Size > loadConfigSize_) && (loadConfig.Size <= size)) {
+            std::cerr << "Warn: load config larger than reported by data directory entry,"
+                      << " overwriting"
+                      << "\n";
+            if ((loadConfigData.data() + loadConfig.Size < loadedImage_.get()->fileBuffer->buf) ||
+                (loadConfigData.data() + loadConfig.Size >
+                 loadedImage_.get()->fileBuffer->buf + loadedImage_.get()->fileBuffer->bufLen)) {
+                std::cerr << "Warn: load config is out of bounds"
+                          << "\n";
+            } else {
+                memcpy(&loadConfig, loadConfigData.data(), loadConfig.Size);
+                loadConfigSize_ = loadConfig.Size;
+            }
+        }
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
@@ -129,9 +143,24 @@ Checksec::Checksec(std::string filepath) : filepath_(filepath), loadedImage_(fil
             std::cerr << "Warn: undersized load config, probably missing fields"
                       << "\n";
         }
+
         auto size = std::min(loadConfigData.size(), sizeof(loadConfig));
         memcpy(&loadConfig, loadConfigData.data(), size);
         loadConfigSize_ = loadConfigData.size();
+        if ((loadConfig.Size > loadConfigSize_) && (loadConfig.Size <= size)) {
+            std::cerr << "Warn: load config larger than reported by data directory entry,"
+                      << " overwriting"
+                      << "\n";
+            if ((loadConfigData.data() + loadConfig.Size < loadedImage_.get()->fileBuffer->buf) ||
+                (loadConfigData.data() + loadConfig.Size >
+                 loadedImage_.get()->fileBuffer->buf + loadedImage_.get()->fileBuffer->bufLen)) {
+                std::cerr << "Warn: load config is out of bounds"
+                          << "\n";
+            } else {
+                memcpy(&loadConfig, loadConfigData.data(), loadConfig.Size);
+                loadConfigSize_ = loadConfig.Size;
+            }
+        }
         loadConfigGuardFlags_ = loadConfig.GuardFlags;
         loadConfigSecurityCookie_ = loadConfig.SecurityCookie;
         loadConfigSEHandlerTable_ = loadConfig.SEHandlerTable;
