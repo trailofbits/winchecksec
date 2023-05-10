@@ -1,7 +1,7 @@
 winchecksec
 ===========
 
-[![Build Status](https://img.shields.io/github/workflow/status/trailofbits/winchecksec/CI/master)](https://github.com/trailofbits/winchecksec/actions?query=workflow%3ACI)
+[![CI](https://github.com/trailofbits/winchecksec/actions/workflows/ci.yml/badge.svg)](https://github.com/trailofbits/winchecksec/actions/workflows/ci.yml)
 
 `winchecksec` performs static detection of common Windows security features.
 
